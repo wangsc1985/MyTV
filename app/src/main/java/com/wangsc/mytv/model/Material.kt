@@ -1,4 +1,4 @@
-package com.wangsc.mytv
+package com.wangsc.mytv.model
 
 class Material{
     var Title:String
@@ -6,7 +6,7 @@ class Material{
     var FilePath:String
     var Checked:Boolean
     var FileType:Int
-    var FileId:Long
+    var FileId:Int
     var UploadedSize:Int
     var TimeStamps:String
     var Time:String
