@@ -360,6 +360,10 @@ class FullscreenActivity : AppCompatActivity() {
     override fun onResume() {
         e("on resume")
         mediaStart()
+        e("----------------------------------"+SocketService::class.java.name)
+        if(!_Utils.isRunService(this,SocketService::class.java.name)){
+            startService(Intent(this,SocketService::class.java))
+        }
         super.onResume()
     }
 

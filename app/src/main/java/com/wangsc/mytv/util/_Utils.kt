@@ -1,10 +1,12 @@
 package com.wangsc.mytv.util
 
 import android.annotation.SuppressLint
+import android.app.ActivityManager
 import android.app.Application
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.Context.ACTIVITY_SERVICE
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
@@ -99,6 +101,22 @@ object _Utils {
         Log.e("wangsc", log.toString())
     }
 
+    /**
+     * 判断服务是否在运行
+     * @param context
+     * @param serviceName
+     * @return
+     * 服务名称为全路径 例如com.ghost.WidgetUpdateService
+     */
+    fun isRunService(context: Context, serviceName: String): Boolean {
+        val manager = context.getSystemService(ACTIVITY_SERVICE) as ActivityManager
+        for (service in manager.getRunningServices(Int.MAX_VALUE)) {
+            if (serviceName == service.service.className) {
+                return true
+            }
+        }
+        return false
+    }
     /**
      * 获取所有程序的包名信息
      *
