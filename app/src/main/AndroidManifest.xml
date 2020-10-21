@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.wangsc.mytv">
 
     <!-- 读写文件 -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <!-- 配置权限 -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" /> <!-- 配置权限 -->
     <uses-permission android:name="android.permission.USES_POLICY_FORCE_LOCK" />
-
-    <!-- 声明关屏组件 -->
-
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.GET_TASKS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:allowBackup="true"
@@ -20,6 +20,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
+        <service android:name=".service.SocketService" android:priority="1000" />
+
+        <receiver android:name=".receiver.ScreenBroadcaseReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.USER_PRESENT" />
+            </intent-filter>
+        </receiver>
 
         <activity
             android:name=".activity.FullscreenActivity"
@@ -34,10 +42,11 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name=".YNAdminReceiver">
+        <receiver android:name=".receiver.YNAdminReceiver">
             <meta-data
                 android:name="android.app.device_admin"
                 android:resource="@xml/yndeviceadmin" />
+
             <intent-filter>
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
             </intent-filter>

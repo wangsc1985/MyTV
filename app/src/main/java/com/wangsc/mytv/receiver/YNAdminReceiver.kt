@@ -1,4 +1,4 @@
-package com.wangsc.mytv
+package com.wangsc.mytv.receiver
 
 import android.app.admin.DeviceAdminReceiver
 import android.content.BroadcastReceiver

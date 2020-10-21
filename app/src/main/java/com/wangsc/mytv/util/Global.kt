@@ -1,4 +1,4 @@
-package com.wangsc.mytv
+package com.wangsc.mytv.util
 
 import android.text.TextUtils
 import java.text.SimpleDateFormat

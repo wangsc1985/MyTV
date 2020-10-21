@@ -1,6 +1,6 @@
 package com.wangsc.mytv.model
 
-import com.wangsc.mytv.concat
+import com.wangsc.mytv.util.concat
 import java.util.*
 
 /**

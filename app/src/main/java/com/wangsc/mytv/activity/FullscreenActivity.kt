@@ -1,6 +1,7 @@
 package com.wangsc.mytv.activity
 
 import android.annotation.SuppressLint
+import android.app.PendingIntent.getActivity
 import android.content.*
 import android.content.pm.ActivityInfo
 import android.graphics.Color
@@ -12,11 +13,12 @@ import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.view.WindowManager
 import com.wangsc.mytv.R
-import com.wangsc.mytv._Utils
-import com.wangsc.mytv._Utils.e
+import com.wangsc.mytv.util._Utils
+import com.wangsc.mytv.util._Utils.e
 import com.wangsc.mytv.model.DataContext
 import com.wangsc.mytv.model.Material
 import com.wangsc.mytv.model.Setting
+import com.wangsc.mytv.service.SocketService
 import kotlinx.android.synthetic.main.activity_fullscreen.*
 import java.io.DataInputStream
 import java.io.DataOutputStream
@@ -76,18 +78,20 @@ class FullscreenActivity : AppCompatActivity() {
     }
     //endregion
 
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        e("on window focus changed : $hasFocus")
-        hide()
-    }
-
     override fun onPostCreate(savedInstanceState: Bundle?) {
         super.onPostCreate(savedInstanceState)
         e("on post create")
         hide()
     }
 
+    override fun onRestart() {
+        super.onRestart()
+        val apps = _Utils.getAppInfos(application)
+        apps.forEach {
+            e(it)
+        }
+        // com.cibn.tv 优酷
+    }
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,12 +106,15 @@ class FullscreenActivity : AppCompatActivity() {
              */
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
+
             mediaPosition = dataContext.getSetting(Setting.KEYS.media_position, 0).int
             mediaPath = dataContext.getSetting(Setting.KEYS.media_path, "").string
+            e("路径：${mediaPath} , 位置：${mediaPosition/1000}秒")
 
             fileList = _Utils.getAllLocalVideos(this)
             var fileNames = arrayOfNulls<String>(fileList.size)
             fileList.forEach {
+                e("title : ${it.Title} , size : ${it.FileSize/1024/1024}M")
                 fileNames[it.FileId] = it.Title
                 if (it.FilePath == mediaPath) {
                     index = it.FileId
@@ -170,6 +177,7 @@ class FullscreenActivity : AppCompatActivity() {
             registerReceiver(mReceiver, filter)
             //endregion
 
+            startService(Intent(this,SocketService::class.java))
             startSocket()
         } catch (e: Exception) {
             e("${e.message}")
@@ -200,13 +208,20 @@ class FullscreenActivity : AppCompatActivity() {
                     var dis = DataInputStream(socket.getInputStream())
                     val dd = dis.readInt()
                     when (dd) {
+                        //region 已有替代
                         0 -> {
+                            /**
+                             * 返回播放状态
+                             */
                             val dos = DataOutputStream(socket.getOutputStream())
                             dos.writeBoolean(videoView.isPlaying)
                             dos.flush()
                             dos.close()
                         }
                         1 -> {
+                            /**
+                             * 暂停或播放视频，并返回播放状态
+                             */
                             val dos = DataOutputStream(socket.getOutputStream())
                             dos.writeBoolean(!videoView.isPlaying)
                             dos.flush()
@@ -224,7 +239,9 @@ class FullscreenActivity : AppCompatActivity() {
 
                         }
                         2 -> {
-                            // 音量加
+                            /**
+                             *  音量加
+                             */
                             runOnUiThread {
                                 val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
                                 am.adjustStreamVolume(
@@ -235,7 +252,9 @@ class FullscreenActivity : AppCompatActivity() {
                             }
                         }
                         3 -> {
-                            // 音量减
+                            /**
+                             *  音量减
+                             */
                             runOnUiThread {
                                 val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
                                 am.adjustStreamVolume(
@@ -245,8 +264,11 @@ class FullscreenActivity : AppCompatActivity() {
                                 )
                             }
                         }
+                        //endregion
                         4 -> {
-                            // 前进
+                            /**
+                             * 前进
+                             */
                             runOnUiThread {
                                 mediaForward()
                             }
