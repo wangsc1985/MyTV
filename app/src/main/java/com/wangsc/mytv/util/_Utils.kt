@@ -2,6 +2,7 @@ package com.wangsc.mytv.util
 
 import android.annotation.SuppressLint
 import android.app.ActivityManager
+import android.app.AlertDialog
 import android.app.Application
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
@@ -39,17 +40,22 @@ object _Utils {
 //        mWakeLock.acquire()
     }
     fun closeScreen(context: Context) {
-        var mCompName = ComponentName(context, YNAdminReceiver::class.java)
-        val mDevicePolicyManager = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        if (!mDevicePolicyManager.isAdminActive(mCompName)) {
-            e("重新设定权限")
-            val intent = Intent()
-//            intent.flags=Intent.FLAG_ACTIVITY_NEW_TASK
-            intent.action = DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN
-            intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, mCompName)
-            context.startActivity(intent)
-        } else {
-            mDevicePolicyManager.lockNow()
+        try {
+            var mCompName = ComponentName(context, YNAdminReceiver::class.java)
+            val mDevicePolicyManager = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+            if (!mDevicePolicyManager.isAdminActive(mCompName)) {
+                e("重新设定权限")
+                val intent = Intent()
+//                intent.flags=Intent.FLAG_ACTIVITY_NEW_TASK
+                intent.action = DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN
+                intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, mCompName)
+                context.startActivity(intent)
+            } else {
+                mDevicePolicyManager.lockNow()
+            }
+        } catch (e: Exception) {
+            e(e.message)
+//            AlertDialog.Builder(context).setMessage(e.message).show()
         }
     }
     fun isScreenOn(context: Context):Boolean{
@@ -74,7 +80,6 @@ object _Utils {
             val wakeLock = pm.newWakeLock(PowerManager, context.javaClass.canonicalName)
             if (null != wakeLock) {
                 wakeLock.acquire()
-                Log.e("wangsc", "锁定唤醒锁: $wakeLock")
                 return wakeLock
             }
         } catch (e: java.lang.Exception) {
@@ -88,7 +93,6 @@ object _Utils {
     fun releaseWakeLock(context: Context?, wakeLock: WakeLock?) {
         var wakeLock = wakeLock
         try {
-            Log.e("wangsc", "解除唤醒锁: $wakeLock")
             if (null != wakeLock && wakeLock.isHeld) {
                 wakeLock.release()
                 wakeLock = null
@@ -97,8 +101,8 @@ object _Utils {
         }
     }
 
-    fun e(log: Any){
-        Log.e("wangsc", log.toString())
+    fun e(log: Any?){
+        Log.e("wangsc", (log?:"信息为空").toString())
     }
 
     /**

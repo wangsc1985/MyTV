@@ -86,10 +86,10 @@ class FullscreenActivity : AppCompatActivity() {
 
     override fun onRestart() {
         super.onRestart()
-        val apps = _Utils.getAppInfos(application)
-        apps.forEach {
-            e(it)
-        }
+//        val apps = _Utils.getAppInfos(application)
+//        apps.forEach {
+//            e(it)
+//        }
         // com.cibn.tv 优酷
     }
     @SuppressLint("ClickableViewAccessibility")
@@ -114,7 +114,7 @@ class FullscreenActivity : AppCompatActivity() {
             fileList = _Utils.getAllLocalVideos(this)
             var fileNames = arrayOfNulls<String>(fileList.size)
             fileList.forEach {
-                e("title : ${it.Title} , size : ${it.FileSize/1024/1024}M")
+//                e("title : ${it.Title} , size : ${it.FileSize/1024/1024}M")
                 fileNames[it.FileId] = it.Title
                 if (it.FilePath == mediaPath) {
                     index = it.FileId
@@ -134,7 +134,6 @@ class FullscreenActivity : AppCompatActivity() {
             videoView.setOnPreparedListener {
                 textView_time.text = format.format(mediaPosition.toDouble() / videoView.duration)
                 videoView.seekTo(mediaPosition)
-                videoView.start()
             }
             videoView.setOnCompletionListener {
                 index++
@@ -177,7 +176,7 @@ class FullscreenActivity : AppCompatActivity() {
             registerReceiver(mReceiver, filter)
             //endregion
 
-            startService(Intent(this,SocketService::class.java))
+//            startService(Intent(this,SocketService::class.java))
             startSocket()
         } catch (e: Exception) {
             e("${e.message}")
@@ -210,18 +209,14 @@ class FullscreenActivity : AppCompatActivity() {
                     when (dd) {
                         //region 已有替代
                         0 -> {
-                            /**
-                             * 返回播放状态
-                             */
+                            e("返回播放状态")
                             val dos = DataOutputStream(socket.getOutputStream())
                             dos.writeBoolean(videoView.isPlaying)
                             dos.flush()
                             dos.close()
                         }
                         1 -> {
-                            /**
-                             * 暂停或播放视频，并返回播放状态
-                             */
+                             e("暂停或播放视频，并返回播放状态")
                             val dos = DataOutputStream(socket.getOutputStream())
                             dos.writeBoolean(!videoView.isPlaying)
                             dos.flush()
@@ -239,9 +234,7 @@ class FullscreenActivity : AppCompatActivity() {
 
                         }
                         2 -> {
-                            /**
-                             *  音量加
-                             */
+                            e("音量加")
                             runOnUiThread {
                                 val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
                                 am.adjustStreamVolume(
@@ -252,9 +245,7 @@ class FullscreenActivity : AppCompatActivity() {
                             }
                         }
                         3 -> {
-                            /**
-                             *  音量减
-                             */
+                            e("音量减")
                             runOnUiThread {
                                 val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
                                 am.adjustStreamVolume(
@@ -266,27 +257,25 @@ class FullscreenActivity : AppCompatActivity() {
                         }
                         //endregion
                         4 -> {
-                            /**
-                             * 前进
-                             */
+                            e("前进")
                             runOnUiThread {
                                 mediaForward()
                             }
                         }
                         5 -> {
-                            // 后退
+                            e("后退")
                             runOnUiThread {
                                 mediaRewind()
                             }
                         }
                         6 -> {
-                            // 下一个
+                            e("下一个")
                             runOnUiThread {
                                 mediaNext()
                             }
                         }
                         7 -> {
-                            // 上一个
+                            e("上一个")
                             runOnUiThread {
                                 mediaPrev()
                             }
@@ -354,13 +343,12 @@ class FullscreenActivity : AppCompatActivity() {
         timer.cancel()
         textView_title.setTextColor(Color.RED)
         textView_time.setTextColor(Color.RED)
-        e("当前播放位置：$mediaPosition")
+        e("当前播放位置：${mediaPosition/1000}秒")
     }
 
     override fun onResume() {
         e("on resume")
         mediaStart()
-        e("----------------------------------"+SocketService::class.java.name)
         if(!_Utils.isRunService(this,SocketService::class.java.name)){
             startService(Intent(this,SocketService::class.java))
         }
@@ -401,7 +389,7 @@ class FullscreenActivity : AppCompatActivity() {
                 } catch (e: Exception) {
                 }
             }
-        }, 10000, 10000)
+        }, 1000, 1000)
     }
 
 }

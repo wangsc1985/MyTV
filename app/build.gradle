@@ -16,6 +16,17 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 
+    /**
+     * start 调试时使用自动签名，手动添加。
+     */
+    signingConfigs {
+        release {
+            storeFile file('wangsc.jks')
+            storePassword 'wangsc351489'
+            keyAlias 'key'
+            keyPassword 'wangsc351489'
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
