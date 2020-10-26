@@ -29,7 +29,7 @@ class Setting(var name: String, var string: String, var level: Int) {
 
     enum class KEYS  //endregion
     {
-        media_position, media_path
+        media_position, media_path,net_video_num,is_play_local
     }
 
 }
