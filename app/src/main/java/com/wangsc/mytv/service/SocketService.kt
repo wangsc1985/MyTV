@@ -9,7 +9,9 @@ import android.media.AudioManager
 import android.os.IBinder
 import android.os.PowerManager
 import android.view.KeyEvent
+import com.wangsc.mytv.activity.FullscreenActivity
 import com.wangsc.mytv.util._NotificationUtils
+import com.wangsc.mytv.util._Session
 import com.wangsc.mytv.util._Utils
 import com.wangsc.mytv.util._Utils.e
 import java.io.DataInputStream
@@ -32,7 +34,7 @@ class SocketService : Service() {
 
             wakeLock = _Utils.acquireWakeLock(applicationContext, PowerManager.PARTIAL_WAKE_LOCK)!!
         } catch (e: Exception) {
-            e(e.message)
+            _Utils.addLog2File("err","Socket运行异常",e.message)
         }
 
         return super.onStartCommand(intent, flags, startId)
@@ -43,31 +45,34 @@ class SocketService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        stopForeground(true)
-        _Utils.releaseWakeLock(applicationContext, wakeLock)
+        try {
+            stopForeground(true)
+            _Utils.releaseWakeLock(applicationContext, wakeLock)
+        } catch (e:Exception) {
+            _Utils.addLog2File("err","Socket运行异常",e.message)
+        }
     }
+
     fun startSocket() {
         Thread {
             try {
-                serverSocket = ServerSocket(8123);
+                serverSocket = ServerSocket(_Session.ServiceSocketPort);
                 while (true) {
                     var socket = serverSocket.accept();
                     e("socket accept")
+                    _Utils.addLog2File("run","8123端口接收到socket请求",null)
                     var dis = DataInputStream(socket.getInputStream())
-                    e("socket get input stream")
                     val dd = dis.readInt()
-                    e("read int ${dd}")
                     when (dd) {
+                        100->{
+                            _Utils.openApp(applicationContext,"com.wangsc.mytv")
+                        }
                         0 -> {
                             e("获取播放状态")
                             val dos = DataOutputStream(socket.getOutputStream())
-                            e("1")
                             dos.writeBoolean(_Utils.isScreenOn(applicationContext))
-                            e("2")
                             dos.flush()
-                            e("3")
                             dos.close()
-                            e("4")
                         }
                         1 -> {
                             e("更改播放状态")
@@ -177,9 +182,11 @@ class SocketService : Service() {
             }catch (e:EOFException){
                 e.printStackTrace()
                 e(e.message)
+                _Utils.addLog2File("err","Service Socket运行异常",e.message)
             }
             catch (e: Exception) {
                 e(e.message)
+                _Utils.addLog2File("err","Service Socket运行异常",e.message)
             }
         }.start()
     }

@@ -29,7 +29,7 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context,
                         + "level INT NOT NULL DEFAULT 100)"
             )
         } catch (e: SQLException) {
-            Log.e("wangsc", e.message)
+            Log.e("wangsc", e.message?:"")
         }
     }
 
@@ -39,7 +39,7 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context,
             when (oldVersion) {
             }
         } catch (e: SQLException) {
-            Log.e("wangsc", e.message)
+            Log.e("wangsc", e.message?:"")
         }
     }
 

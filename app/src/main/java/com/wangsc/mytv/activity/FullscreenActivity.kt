@@ -13,6 +13,7 @@ import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.view.WindowManager
+import android.widget.Toast
 import com.wangsc.mytv.R
 import com.wangsc.mytv.util._Utils
 import com.wangsc.mytv.util._Utils.e
@@ -20,6 +21,7 @@ import com.wangsc.mytv.model.DataContext
 import com.wangsc.mytv.model.Material
 import com.wangsc.mytv.model.Setting
 import com.wangsc.mytv.service.SocketService
+import com.wangsc.mytv.util._Session
 import kotlinx.android.synthetic.main.activity_fullscreen.*
 import java.io.DataInputStream
 import java.io.DataOutputStream
@@ -53,7 +55,7 @@ class FullscreenActivity : AppCompatActivity() {
 
     //region 全屏处理
     val mHideHandler = Handler()
-    private fun hide() {
+    private fun hideActionBar() {
         //软件自身的action bar
         val actionBar = supportActionBar
         actionBar?.hide()
@@ -76,7 +78,7 @@ class FullscreenActivity : AppCompatActivity() {
         actionBar?.show()
     }
 
-    private val mHideRunnable = Runnable { hide() }
+    private val mHideRunnable = Runnable { hideActionBar() }
     private fun delayedHide(delayMillis: Int) {
         mHideHandler.removeCallbacks(mHideRunnable)
         mHideHandler.postDelayed(mHideRunnable, delayMillis.toLong())
@@ -86,7 +88,7 @@ class FullscreenActivity : AppCompatActivity() {
     override fun onPostCreate(savedInstanceState: Bundle?) {
         super.onPostCreate(savedInstanceState)
         e("on post create")
-        hide()
+        hideActionBar()
     }
 
     override fun onRestart() {
@@ -117,8 +119,10 @@ class FullscreenActivity : AppCompatActivity() {
             isPlayLocal = dataContext.getSetting(Setting.KEYS.is_play_local, false).boolean
 
             if (isPlayLocal) {
+                e("播放本地视频")
                 playLocalVideo()
             } else {
+                e("播放网络视频")
                 playNetVideo()
             }
 
@@ -174,7 +178,7 @@ class FullscreenActivity : AppCompatActivity() {
     fun startSocket() {
         Thread {
             try {
-                serverSocket = ServerSocket(8000);
+                serverSocket = ServerSocket(_Session.ActivitySocketPort);
                 while (true) {
                     var socket = serverSocket.accept();
                     var dis = DataInputStream(socket.getInputStream())
@@ -183,15 +187,11 @@ class FullscreenActivity : AppCompatActivity() {
                         //region 已有替代
                         10 -> {
                             // TODO: 2020/10/26 runOnUiHandler块内访问属性变量，不能读到正确的值
-                            e("+++++++++++++is play local:$isPlayLocal")
                             if (isPlayLocal) {
                                 playNetVideo()
                             } else {
                                 playLocalVideo()
                             }
-                            isPlayLocal = !isPlayLocal
-                            dataContext.editSetting(Setting.KEYS.is_play_local, isPlayLocal)
-                            e("----------is play local:$isPlayLocal")
                         }
                         0 -> {
                             e("返回播放状态")
@@ -272,46 +272,59 @@ class FullscreenActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 e.printStackTrace()
                 e("scoket : ${e.message}")
+                _Utils.addLog2File("err","activity socket运行异常",e.message)
             }
         }.start()
     }
 
     fun playNetVideo() {
-        try {
-            netVideoNum = dataContext.getSetting(Setting.KEYS.net_video_num, "0").int
-            if (netVideoNum >= uris.size) {
-                netVideoNum = 0
-            }
-            e("uri : ${uris[netVideoNum]}")
-            runOnUiThread {
-                videoView.setVideoURI(Uri.parse(uris[netVideoNum]))
-                textView_title.text = ""
-                textView_time.text = ""
-//            val mediaController = MediaController(this)
-//            videoView.setMediaController(mediaController)
-
-                videoView.setOnPreparedListener {
-                    try {
-                        e("video view has prepared...")
-                        if (!videoView.isPlaying) {
-                            e("视频不在播放状态，启动播放。")
-                            videoView.start()
-                        }
-                    } catch (e: Exception) {
-                        e(e.message)
-                    }
-                }
-                videoView.requestFocus()
-            }
-//            stopTimerTask()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            e(e.message)
-        }
+        playLocalVideo()
+//        try {
+//            isPlayLocal = false
+//            dataContext.editSetting(Setting.KEYS.is_play_local, isPlayLocal)
+//            netVideoNum = dataContext.getSetting(Setting.KEYS.net_video_num, "0").int
+//            if (netVideoNum >= uris.size) {
+//                netVideoNum = 0
+//            }
+//            e("uri : ${uris[netVideoNum]}")
+//            runOnUiThread {
+//                videoView.setVideoURI(Uri.parse(uris[netVideoNum]))
+//                textView_title.text = ""
+//                textView_time.text = ""
+////            val mediaController = MediaController(this)
+////            videoView.setMediaController(mediaController)
+//
+//                videoView.setOnPreparedListener {
+//                    try {
+//                        e("video view has prepared...")
+//                        if (!videoView.isPlaying) {
+//                            e("视频不在播放状态，启动播放。")
+//                            videoView.start()
+//                        }
+//                    } catch (e: Exception) {
+//                        e(e.message)
+//                    }
+//                }
+//                videoView.setOnErrorListener(object : MediaPlayer.OnErrorListener {
+//                    override fun onError(mp: MediaPlayer?, what: Int, extra: Int): Boolean {
+////                        Toast.makeText(this@FullscreenActivity,"不能播放当前直播源，正在准备播放下一个视频",Toast.LENGTH_LONG).show()
+//                        playLocalVideo()
+//                        return true
+//                    }
+//                })
+//                videoView.requestFocus()
+//            }
+////            stopTimerTask()
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            e(e.message)
+//        }
     }
 
     fun playLocalVideo() {
         try {
+            isPlayLocal = true
+            dataContext.editSetting(Setting.KEYS.is_play_local, isPlayLocal)
             mediaPosition = dataContext.getSetting(Setting.KEYS.media_position, 0).int
             mediaPath = dataContext.getSetting(Setting.KEYS.media_path, "").string
             e("路径：${mediaPath} , 位置：${mediaPosition / 1000}秒")
@@ -364,6 +377,18 @@ class FullscreenActivity : AppCompatActivity() {
                     dataContext.editSetting(Setting.KEYS.media_path, filePath)
                     dataContext.editSetting(Setting.KEYS.media_position, mediaPosition)
                 }
+
+                videoView.setOnErrorListener(object : MediaPlayer.OnErrorListener {
+                    override fun onError(mp: MediaPlayer?, what: Int, extra: Int): Boolean {
+                        Toast.makeText(
+                            this@FullscreenActivity,
+                            "不能播放当前视频，正在准备播放下一个视频",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        mediaNext()
+                        return true
+                    }
+                })
                 videoView.requestFocus()
             }
             startTimerTask()
@@ -451,14 +476,14 @@ class FullscreenActivity : AppCompatActivity() {
 
     fun mediaStart() {
         try {
-            videoView.start()
+            if (!videoView.isPlaying)
+                videoView.start()
             startTimerTask()
             textView_title.setTextColor(Color.WHITE)
             textView_time.setTextColor(Color.WHITE)
         } catch (e: Exception) {
             e(e.message)
         }
-//        imageView_play.visibility=View.INVISIBLE
     }
 
     fun mediaPause() {
@@ -472,28 +497,29 @@ class FullscreenActivity : AppCompatActivity() {
         e("当前播放位置：${mediaPosition / 1000}秒")
     }
 
-    var prePosition = -100
     fun startTimerTask() {
-        e("启动timerTask $task")
+        e("启动timerTask , timer task=$task , ${if (task == null) "系统重新构造task对象" else ""}")
         if (task == null) {
             task = object : TimerTask() {
                 override fun run() {
                     try {
-                        e("南无阿弥陀佛")
-                        if(!isPlayLocal){
-                            textView_time.text = ""
-                            textView_title.text= ""
-                            hide()
+//                        e("南无阿弥陀佛：$isPlayLocal")
+                        if (!isPlayLocal) {
+                            runOnUiThread {
+                                textView_time.text = ""
+                                textView_title.text = ""
+                                hideActionBar()
+                            }
                             return
                         }
-                            mediaPosition = videoView.currentPosition
-                            dataContext.editSetting(Setting.KEYS.media_position, mediaPosition)
-                            hide()
+                        mediaPosition = videoView.currentPosition
+                        dataContext.editSetting(Setting.KEYS.media_position, mediaPosition)
 
-                            runOnUiThread {
-                                textView_time.text =
-                                    format.format(mediaPosition.toDouble() / videoView.duration)
-                            }
+                        runOnUiThread {
+                            hideActionBar()
+                            textView_time.text =
+                                format.format(mediaPosition.toDouble() / videoView.duration)
+                        }
                     } catch (e: Exception) {
                     }
                 }
@@ -521,14 +547,22 @@ class FullscreenActivity : AppCompatActivity() {
             uris.add("http://ivi.bupt.edu.cn/hls/cctv3hd.m3u8")//CCTV3高清
             uris.add("http://ivi.bupt.edu.cn/hls/cctv5phd.m3u8")//CCTV5+高清
             uris.add("http://ivi.bupt.edu.cn/hls/cctv6hd.m3u8")//CCTV6高清
-            uris.add("http://livemixer1.kksmg.com/tvlive/dfws/d32b1f63-26ff-48be-87db-96224974c2d2.m3u8")//湖南卫视
         }
     }
 
     override fun onResume() {
         e("on resume")
         mediaStart()
-        if (!_Utils.isRunService(this, SocketService::class.java.name)) {
+        val socketServiceIsRun = _Utils.isRunService(this, SocketService::class.java.name)
+        val portCanUse = _Utils.isPortAvailable(_Session.ServiceSocketPort)
+        e("port can use? $portCanUse")
+        if (portCanUse) {
+            e("重新启动ServiceSocket")
+            val intent = Intent(this, SocketService::class.java)
+            if (socketServiceIsRun) {
+                e("重新启动socket服务")
+                stopService(intent)
+            }
             startService(Intent(this, SocketService::class.java))
         }
         super.onResume()
@@ -542,7 +576,6 @@ class FullscreenActivity : AppCompatActivity() {
 
     override fun onStop() {
         e("on stop")
-        stopTimer()
         super.onStop()
     }
 
@@ -550,6 +583,7 @@ class FullscreenActivity : AppCompatActivity() {
         e("on destory")
         serverSocket.close()
         unregisterReceiver(mReceiver)
+        stopTimer()
         super.onDestroy()
     }
 }

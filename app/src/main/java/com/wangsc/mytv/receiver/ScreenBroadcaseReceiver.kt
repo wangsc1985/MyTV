@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.wangsc.mytv.service.SocketService
+import com.wangsc.mytv.util._Utils
 
 class ScreenBroadcaseReceiver : BroadcastReceiver() {
     private fun e(msg: Any) {
@@ -17,7 +18,8 @@ class ScreenBroadcaseReceiver : BroadcastReceiver() {
                 val now = System.currentTimeMillis()
                 if (now - preDateTime >= 10000) {
                     try {
-                        e("ACTION_USER_PRESENT")
+                        e("屏幕解锁成功")
+                        if(!_Utils.isRunService(context,SocketService::class.java.name))
                         context.startService(Intent(context,SocketService::class.java))
                     } finally {
                         preDateTime = now
