@@ -22,7 +22,7 @@ import java.util.List;
 import static android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED;
 import static android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED;
 
-public class MyListenerService extends AccessibilityService {
+public class MyAccessibilityService extends AccessibilityService {
 
     private int clickTag = 0;
     private DataContext dataContext;

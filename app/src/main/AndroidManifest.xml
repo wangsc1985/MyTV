@@ -39,7 +39,7 @@
         </receiver>
 
         <service
-            android:name=".service.MyListenerService"
+            android:name=".service.MyAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
@@ -51,7 +51,7 @@
         </service>
 
         <activity
-            android:name=".activity.FullscreenActivity"
+            android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/app_name"
             android:screenOrientation="portrait"

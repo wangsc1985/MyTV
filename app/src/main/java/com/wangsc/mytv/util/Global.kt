@@ -1,8 +1,13 @@
 package com.wangsc.mytv.util
 
 import android.text.TextUtils
+import android.util.Log
 import java.text.SimpleDateFormat
 import java.util.*
+
+fun e(data: Any) {
+    Log.e("wangsc", data.toString())
+}
 
 fun String.Companion.concat(vararg args:Any):String{
     var sb=StringBuffer()

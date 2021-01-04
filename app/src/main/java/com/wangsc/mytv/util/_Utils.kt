@@ -125,11 +125,11 @@ object _Utils {
     /**
      * 如果端口未被占用，返回true
      */
-    fun isPortAvailable(port: Int): Boolean {
+    fun isPortAvailable(context: Context,port: Int): Boolean {
         return try {
             //调用bindport函数对本机指定端口进行验证
             val ip = getIp()
-            _CloudUtils.saveSetting("0088","tv_ip",ip,null)
+            _CloudUtils.saveSetting(context,"0088","tv_ip",ip,null)
             bindPort(ip, port)
             true
         } catch (e: java.lang.Exception) {

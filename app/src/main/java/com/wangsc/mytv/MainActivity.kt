@@ -1,4 +1,4 @@
-package com.wangsc.mytv.activity
+package com.wangsc.mytv
 
 import android.annotation.SuppressLint
 import android.content.*
@@ -14,7 +14,6 @@ import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.view.WindowManager
 import android.widget.Toast
-import com.wangsc.mytv.R
 import com.wangsc.mytv.util._Utils
 import com.wangsc.mytv.util._Utils.e
 import com.wangsc.mytv.model.DataContext
@@ -29,7 +28,7 @@ import java.net.ServerSocket
 import java.text.DecimalFormat
 import java.util.*
 
-class FullscreenActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity() {
     private var timer = Timer()
     private var task: TimerTask? = null
     private var index: Int
@@ -381,7 +380,7 @@ class FullscreenActivity : AppCompatActivity() {
                 videoView.setOnErrorListener(object : MediaPlayer.OnErrorListener {
                     override fun onError(mp: MediaPlayer?, what: Int, extra: Int): Boolean {
                         Toast.makeText(
-                            this@FullscreenActivity,
+                            this@MainActivity,
                             "不能播放当前视频，正在准备播放下一个视频",
                             Toast.LENGTH_LONG
                         ).show()
@@ -497,12 +496,17 @@ class FullscreenActivity : AppCompatActivity() {
         e("当前播放位置：${mediaPosition / 1000}秒")
     }
 
+    var count = 0
     fun startTimerTask() {
         e("启动timerTask , timer task=$task , ${if (task == null) "系统重新构造task对象" else ""}")
         if (task == null) {
             task = object : TimerTask() {
                 override fun run() {
                     try {
+                        if(count++>20&&!_Utils.isRunService(this@MainActivity,SocketService::class.java.name)){
+                            this@MainActivity.startService(Intent(this@MainActivity,SocketService::class.java))
+                            count=0
+                        }
 //                        e("南无阿弥陀佛：$isPlayLocal")
                         if (!isPlayLocal) {
                             runOnUiThread {
@@ -554,7 +558,7 @@ class FullscreenActivity : AppCompatActivity() {
         e("on resume")
         mediaStart()
         val socketServiceIsRun = _Utils.isRunService(this, SocketService::class.java.name)
-        val portCanUse = _Utils.isPortAvailable(_Session.ServiceSocketPort)
+        val portCanUse = _Utils.isPortAvailable(this,_Session.ServiceSocketPort)
         e("port can use? $portCanUse")
         if (portCanUse) {
             e("重新启动ServiceSocket")

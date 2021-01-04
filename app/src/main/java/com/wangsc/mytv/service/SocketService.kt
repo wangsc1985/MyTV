@@ -9,7 +9,6 @@ import android.media.AudioManager
 import android.os.IBinder
 import android.os.PowerManager
 import android.view.KeyEvent
-import com.wangsc.mytv.activity.FullscreenActivity
 import com.wangsc.mytv.util._NotificationUtils
 import com.wangsc.mytv.util._Session
 import com.wangsc.mytv.util._Utils
@@ -17,7 +16,6 @@ import com.wangsc.mytv.util._Utils.e
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.EOFException
-import java.io.IOException
 import java.net.ServerSocket
 
 

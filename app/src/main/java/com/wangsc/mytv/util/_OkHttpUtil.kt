@@ -3,10 +3,15 @@ package com.wangsc.mytv.util
 import android.util.Log
 import com.wangsc.mytv.callback.HttpCallback
 import com.wangsc.mytv.model.PostArgument
+import com.wangsc.mytv.model.SSLSocketFactoryCompat
 import okhttp3.*
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
+import java.security.KeyManagementException
+import java.security.NoSuchAlgorithmException
+import javax.net.ssl.SSLSocketFactory
+
 
 /**
  * @Description
@@ -19,7 +24,20 @@ object _OkHttpUtil {
     @JvmField
     var client: OkHttpClient
     init {
-        client = OkHttpClient()
+        client = getOkHttpClient()
+    }
+
+    fun getOkHttpClient(): OkHttpClient {
+        val builder = OkHttpClient.Builder()
+        try {
+            val factory: SSLSocketFactory = SSLSocketFactoryCompat()
+            builder.sslSocketFactory(factory)
+        } catch (e: KeyManagementException) {
+            e.printStackTrace()
+        } catch (e: NoSuchAlgorithmException) {
+            e.printStackTrace()
+        }
+        return builder.build()
     }
 
     @JvmStatic
@@ -90,19 +108,19 @@ object _OkHttpUtil {
     }
 
     @JvmStatic
-    fun getRequest(url: String?, callback: HttpCallback) {
+    fun getRequest(url: String, callback: HttpCallback) {
         //创建okHttpClient对象
         val mOkHttpClient = client
 
         //创建一个Request
-        val request = Request.Builder()
-                .url(url!!)
-                .build()
+        val request = Request.Builder().url(url).build()
         //new call
-        val call = mOkHttpClient!!.newCall(request)
+        val call = mOkHttpClient.newCall(request)
         //请求加入调度
         call.enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {}
+            override fun onFailure(call: Call, e: IOException) {
+                callback.excute(e.message)
+            }
 
             @Throws(IOException::class)
             override fun onResponse(call: Call, response: Response) {
