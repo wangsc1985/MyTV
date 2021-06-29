@@ -9,10 +9,10 @@ android {
         applicationId "com.wangsc.buddhatv"
         minSdkVersion 16
         targetSdkVersion 30
-        versionCode 62
-        versionName '2.0'
+        versionCode 68
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        versionName '3.0'
     }
 
     /**

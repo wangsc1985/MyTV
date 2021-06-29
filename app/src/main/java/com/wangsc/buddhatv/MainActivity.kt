@@ -1,9 +1,12 @@
 package com.wangsc.buddhatv
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.support.v7.app.AppCompatActivity
@@ -13,9 +16,11 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.BaseAdapter
 import android.widget.TextView
+import com.wangsc.buddhatv.callback.HttpCallback
 import com.wangsc.buddhatv.model.DataContext
 import com.wangsc.buddhatv.model.DateTime
 import com.wangsc.buddhatv.model.Setting
+import com.wangsc.buddhatv.util._OkHttpUtil
 import com.wangsc.buddhatv.util._Utils
 import com.wangsc.buddhatv.util._Utils.e
 import kotlinx.android.synthetic.main.activity_fullscreen.*
@@ -23,12 +28,13 @@ import java.io.File
 import java.text.Collator
 import java.text.RuleBasedCollator
 import java.util.*
+import java.util.regex.Pattern
 
 class MainActivity : AppCompatActivity() {
     private var timer = Timer()
     private var task: TimerTask? = null
     private var playingFileIndex: Int
-    private var selectedFileIndex:Int
+    private var selectedFileIndex: Int
     private var mediaPosition: Int
     private var mediaPath: String
     private lateinit var fileList: Array<File>
@@ -76,6 +82,21 @@ class MainActivity : AppCompatActivity() {
         hideActionBar()
     }
 
+    private fun loadTitle() {
+        Thread {
+            try {
+                _OkHttpUtil.getRequest(resources.getString(R.string.version_url), HttpCallback { html ->
+                    var html = html.replace("\r", "").replace("\n", "")
+                    var matcher = Pattern.compile("(?<=佛陀讲堂)*(?=</p>)").matcher(html)
+                    matcher.find()
+                    var title = matcher.group().trim()
+                    dc.editSetting(Setting.KEYS.media_title, title)
+                })
+            } catch (e: Exception) {
+            }
+        }.start()
+    }
+
     fun log(log: String) {
         runOnUiThread {
             e(log)
@@ -97,6 +118,7 @@ class MainActivity : AppCompatActivity() {
              */
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             dc = DataContext(this)
+            loadTitle()
 
             lv_list.visibility = View.GONE
 
@@ -345,7 +367,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun setProgress(){
+    fun setProgress() {
 //        tv_progress.text = "${durationToTimeString(mediaPosition)}/${durationToTimeString(videoView.duration)}"
 //        val duration =videoView.duration-mediaPosition
 //        tv_progress.text = "${if(duration>0) durationToTimeString(duration) else ""}"
@@ -390,14 +412,14 @@ class MainActivity : AppCompatActivity() {
                 val buddha = fileList[position]
                 val name = convertView.findViewById<TextView>(R.id.tv_name)
                 name.text = buddha.name
-                if(position==playingFileIndex){
+                if (position == playingFileIndex) {
                     name.setTextColor(Color.RED)
-                }else{
+                } else {
                     name.setTextColor(Color.WHITE)
                 }
-                if(position == selectedFileIndex){
+                if (position == selectedFileIndex) {
                     name.setBackgroundResource(R.color.select)
-                }else{
+                } else {
                     name.setBackgroundResource(R.color.black)
                 }
                 log(buddha.name)
@@ -408,24 +430,27 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    fun isListShow():Boolean{
-        return lv_list.visibility==View.VISIBLE
+    fun isListShow(): Boolean {
+        return lv_list.visibility == View.VISIBLE
     }
-    fun showList(){
-        lv_list.visibility=View.VISIBLE
+
+    fun showList() {
+        lv_list.visibility = View.VISIBLE
     }
-    fun hideList(){
-        lv_list.visibility=View.GONE
-        selectedFileIndex=playingFileIndex
+
+    fun hideList() {
+        lv_list.visibility = View.GONE
+        selectedFileIndex = playingFileIndex
         adapter.notifyDataSetChanged()
     }
 
-    fun showLog(){
+    fun showLog() {
+        tv_log.text = dc.getSetting(Setting.KEYS.media_title, "一门深入 长时薰修").string
         tv_log.visibility = View.VISIBLE
 //        imageView.visibility = View.VISIBLE
     }
 
-    fun hideLog(){
+    fun hideLog() {
         tv_log.visibility = View.GONE
 //        imageView.visibility = View.GONE
     }
@@ -438,10 +463,10 @@ class MainActivity : AppCompatActivity() {
             }
             KeyEvent.KEYCODE_DPAD_CENTER -> {
                 e("中间键")
-                if(isListShow()){
-                    playingFileIndex=selectedFileIndex
+                if (isListShow()) {
+                    playingFileIndex = selectedFileIndex
                     val filePath = fileList[playingFileIndex].absolutePath
-                    if(filePath!=dc.getSetting(Setting.KEYS.media_path,filePath).string){
+                    if (filePath != dc.getSetting(Setting.KEYS.media_path, filePath).string) {
                         videoView.setVideoPath(filePath)
                         tv_title.text = fileList[playingFileIndex].name
                         mediaPosition = 0
@@ -449,7 +474,7 @@ class MainActivity : AppCompatActivity() {
                         dc.editSetting(Setting.KEYS.media_position, mediaPosition)
                     }
                     hideList()
-                }else{
+                } else {
                     if (videoView.isPlaying) {
                         mediaPause()
                     } else {
@@ -459,7 +484,7 @@ class MainActivity : AppCompatActivity() {
             }
             KeyEvent.KEYCODE_DPAD_DOWN -> {
                 e("下方向键")
-                if(isListShow()){
+                if (isListShow()) {
 
                     selectedFileIndex++
                     if (selectedFileIndex >= fileList.size)
@@ -467,41 +492,41 @@ class MainActivity : AppCompatActivity() {
 
                     lv_list.setSelection(selectedFileIndex)
                     adapter.notifyDataSetChanged()
-                }else{
+                } else {
                     showList()
                 }
             }
             KeyEvent.KEYCODE_DPAD_UP -> {
                 e("上方向键")
-                if(isListShow()){
+                if (isListShow()) {
                     selectedFileIndex--
                     if (selectedFileIndex <= -1)
                         selectedFileIndex = fileList.size - 1
 
                     lv_list.setSelection(selectedFileIndex)
                     adapter.notifyDataSetChanged()
-                }else{
+                } else {
                     showList()
                 }
             }
             KeyEvent.KEYCODE_DPAD_LEFT -> {
                 e("左方向键")
-                if(isListShow()){
+                if (isListShow()) {
                     hideList()
-                }else{
+                } else {
                     mediaRewind()
                 }
             }
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
                 e("右方向键")
-                if(isListShow()){
+                if (isListShow()) {
                     hideList()
-                }else{
+                } else {
                     mediaForward()
                 }
             }
             KeyEvent.KEYCODE_BACK -> {
-                if(isListShow()){
+                if (isListShow()) {
                     hideList()
                     return true
                 }
@@ -513,15 +538,16 @@ class MainActivity : AppCompatActivity() {
 
 
             KeyEvent.KEYCODE_MENU -> {
-                if(isListShow()){
+                if (isListShow()) {
                     hideList()
-                }else{
+                } else {
                     showList()
                 }
             }
         }
         return super.onKeyDown(keyCode, event)
     }
+
     @Throws(Exception::class)
     fun durationToTimeString(duration: Int): String {
         val second = duration % 60000 / 1000
