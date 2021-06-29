@@ -82,12 +82,12 @@ class MainActivity : AppCompatActivity() {
         hideActionBar()
     }
 
-    private fun loadTitle() {
+    fun loadTitle() {
         Thread {
             try {
                 _OkHttpUtil.getRequest(resources.getString(R.string.version_url), HttpCallback { html ->
                     var html = html.replace("\r", "").replace("\n", "")
-                    var matcher = Pattern.compile("(?<=佛陀讲堂)*(?=</p>)").matcher(html)
+                    var matcher = Pattern.compile("(?<=<p>佛陀讲堂【).*(?=】</p>)").matcher(html)
                     matcher.find()
                     var title = matcher.group().trim()
                     dc.editSetting(Setting.KEYS.media_title, title)
@@ -118,7 +118,7 @@ class MainActivity : AppCompatActivity() {
              */
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             dc = DataContext(this)
-            loadTitle()
+//            loadTitle()
 
             lv_list.visibility = View.GONE
 
