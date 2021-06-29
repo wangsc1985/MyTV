@@ -12,7 +12,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.BaseAdapter
-import android.widget.ImageView
 import android.widget.TextView
 import com.wangsc.buddhatv.model.DataContext
 import com.wangsc.buddhatv.model.DateTime
@@ -29,7 +28,8 @@ import java.util.*
 class MainActivity : AppCompatActivity() {
     private var timer = Timer()
     private var task: TimerTask? = null
-    private var fileIndex: Int
+    private var playingFileIndex: Int
+    private var selectedFileIndex:Int
     private var mediaPosition: Int
     private var mediaPath: String
     private lateinit var fileList: Array<File>
@@ -41,7 +41,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var fileNames: Array<String?>
 
     init {
-        fileIndex = 0
+        playingFileIndex = 0
+        selectedFileIndex = 0
         mediaPosition = 0
         mediaPath = ""
     }
@@ -103,7 +104,7 @@ class MainActivity : AppCompatActivity() {
             lv_list.visibility = View.GONE
 
             lv_list.setOnItemClickListener { parent, view, position, id ->
-                if (position != fileIndex) {
+                if (position != playingFileIndex) {
                     val file = fileList[position]
                     var filePath = file.absolutePath
                     e("$filePath")
@@ -207,17 +208,18 @@ class MainActivity : AppCompatActivity() {
             for (i in fileList.indices) {
                 fileNames[i] = fileList[i].name
                 if (fileList[i].absolutePath == mediaPath) {
-                    fileIndex = i
+                    playingFileIndex = i
+                    selectedFileIndex = playingFileIndex
                 }
             }
-            if (fileIndex == 0) {
-                dc.editSetting(Setting.KEYS.media_path, fileList[fileIndex].absolutePath)
+            if (playingFileIndex == 0) {
+                dc.editSetting(Setting.KEYS.media_path, fileList[playingFileIndex].absolutePath)
             }
 
             if (fileList.size <= 0)
                 return
 
-            val file = fileList[fileIndex]
+            val file = fileList[playingFileIndex]
 
             runOnUiThread {
                 videoView.setVideoPath(file.absolutePath)
@@ -235,12 +237,13 @@ class MainActivity : AppCompatActivity() {
     fun mediaNext() {
         try {
             log("下一个视频")
-            fileIndex++
-            if (fileIndex >= fileList.size)
-                fileIndex = 0
-            val filePath = fileList[fileIndex].absolutePath
+            playingFileIndex++
+            selectedFileIndex = playingFileIndex
+            if (playingFileIndex >= fileList.size)
+                playingFileIndex = 0
+            val filePath = fileList[playingFileIndex].absolutePath
             videoView.setVideoPath(filePath)
-            tv_title.text = fileList[fileIndex].name
+            tv_title.text = fileList[playingFileIndex].name
             mediaPosition = 0
             dc.editSetting(Setting.KEYS.media_path, filePath)
             dc.editSetting(Setting.KEYS.media_position, mediaPosition)
@@ -253,12 +256,13 @@ class MainActivity : AppCompatActivity() {
     fun mediaPrv() {
         try {
             log("上一个视频")
-            fileIndex--
-            if (fileIndex <= -1)
-                fileIndex = fileList.size - 1
-            val filePath = fileList[fileIndex].absolutePath
+            playingFileIndex--
+            selectedFileIndex = playingFileIndex
+            if (playingFileIndex <= -1)
+                playingFileIndex = fileList.size - 1
+            val filePath = fileList[playingFileIndex].absolutePath
             videoView.setVideoPath(filePath)
-            tv_title.text = fileList[fileIndex].name
+            tv_title.text = fileList[playingFileIndex].name
             mediaPosition = 0
             dc.editSetting(Setting.KEYS.media_path, filePath)
             dc.editSetting(Setting.KEYS.media_position, mediaPosition)
@@ -345,7 +349,8 @@ class MainActivity : AppCompatActivity() {
 
     fun setProgressText(){
 //        tv_progress.text = "${durationToTimeString(mediaPosition)}/${durationToTimeString(videoView.duration)}"
-        tv_progress.text = "${durationToTimeString(videoView.duration-mediaPosition)}"
+        val duration =videoView.duration-mediaPosition
+        tv_progress.text = "${if(duration>0) durationToTimeString(duration) else ""}"
     }
 
     fun stopTimerTask() {
@@ -385,10 +390,15 @@ class MainActivity : AppCompatActivity() {
                 val buddha = fileList[position]
                 val name = convertView.findViewById<TextView>(R.id.tv_name)
                 name.text = buddha.name
-                if(position==fileIndex){
+                if(position==playingFileIndex){
                     name.setTextColor(Color.RED)
                 }else{
                     name.setTextColor(Color.WHITE)
+                }
+                if(position == selectedFileIndex){
+                    name.setBackgroundResource(R.color.select)
+                }else{
+                    name.setBackgroundResource(R.color.black)
                 }
                 log(buddha.name)
             } catch (e: Exception) {
@@ -406,6 +416,8 @@ class MainActivity : AppCompatActivity() {
     }
     fun listHide(){
         lv_list.visibility=View.GONE
+        selectedFileIndex=playingFileIndex
+        adapter.notifyDataSetChanged()
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -417,10 +429,11 @@ class MainActivity : AppCompatActivity() {
             KeyEvent.KEYCODE_DPAD_CENTER -> {
                 e("中间键")
                 if(isListShow()){
-                    val filePath = fileList[fileIndex].absolutePath
+                    playingFileIndex=selectedFileIndex
+                    val filePath = fileList[playingFileIndex].absolutePath
                     if(filePath!=dc.getSetting(Setting.KEYS.media_path,filePath).string){
                         videoView.setVideoPath(filePath)
-                        tv_title.text = fileList[fileIndex].name
+                        tv_title.text = fileList[playingFileIndex].name
                         mediaPosition = 0
                         dc.editSetting(Setting.KEYS.media_path, filePath)
                         dc.editSetting(Setting.KEYS.media_position, mediaPosition)
@@ -437,34 +450,40 @@ class MainActivity : AppCompatActivity() {
             KeyEvent.KEYCODE_DPAD_DOWN -> {
                 e("下方向键")
                 if(isListShow()){
-                    fileIndex++
-                    if (fileIndex >= fileList.size)
-                        fileIndex = 0
+                    selectedFileIndex++
+                    if (selectedFileIndex >= fileList.size)
+                        selectedFileIndex = 0
                     adapter.notifyDataSetChanged()
                 }else{
-                    mediaNext()
+                    listShow()
                 }
-//                scroll_list.visibility = View.VISIBLE
             }
             KeyEvent.KEYCODE_DPAD_UP -> {
                 e("上方向键")
                 if(isListShow()){
-                    fileIndex--
-                    if (fileIndex <= -1)
-                        fileIndex = fileList.size - 1
+                    selectedFileIndex--
+                    if (selectedFileIndex <= -1)
+                        selectedFileIndex = fileList.size - 1
                     adapter.notifyDataSetChanged()
                 }else{
-                mediaPrv()
+                    listShow()
                 }
-//                scroll_list.visibility = View.VISIBLE
             }
             KeyEvent.KEYCODE_DPAD_LEFT -> {
                 e("左方向键")
-                mediaRewind()
+                if(isListShow()){
+                    listHide()
+                }else{
+                    mediaRewind()
+                }
             }
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
                 e("右方向键")
-                mediaForward()
+                if(isListShow()){
+                    listHide()
+                }else{
+                    mediaForward()
+                }
             }
             KeyEvent.KEYCODE_BACK -> {
                 if(isListShow()){
