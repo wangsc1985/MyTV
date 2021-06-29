@@ -1,4 +1,4 @@
-package com.wangsc.mytv.util;
+package com.wangsc.buddhatv.util;
 
 import org.json.JSONArray;
 import org.json.JSONException;

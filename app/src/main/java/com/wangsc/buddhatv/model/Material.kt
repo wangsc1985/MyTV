@@ -1,4 +1,4 @@
-package com.wangsc.mytv.model
+package com.wangsc.buddhatv.model
 
 class Material{
     var Title:String

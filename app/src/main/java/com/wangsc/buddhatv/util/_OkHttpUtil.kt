@@ -1,9 +1,9 @@
-package com.wangsc.mytv.util
+package com.wangsc.buddhatv.util
 
 import android.util.Log
-import com.wangsc.mytv.callback.HttpCallback
-import com.wangsc.mytv.model.PostArgument
-import com.wangsc.mytv.model.SSLSocketFactoryCompat
+import com.wangsc.buddhatv.callback.HttpCallback
+import com.wangsc.buddhatv.model.PostArgument
+import com.wangsc.buddhatv.model.SSLSocketFactoryCompat
 import okhttp3.*
 import org.json.JSONException
 import org.json.JSONObject

@@ -1,16 +1,13 @@
-package com.wangsc.mytv.util
+package com.wangsc.buddhatv.util
 
 import android.content.Context
-import android.util.Log
-import com.wangsc.mytv.callback.CloudCallback
-import com.wangsc.mytv.callback.HttpCallback
-import com.wangsc.mytv.model.DataContext
-import com.wangsc.mytv.model.DateTime
-import com.wangsc.mytv.model.PostArgument
-import com.wangsc.mytv.model.Setting
-import com.wangsc.mytv.util._OkHttpUtil.getRequest
-import com.wangsc.mytv.util._OkHttpUtil.postRequestByJson
-import org.json.JSONArray
+import com.wangsc.buddhatv.callback.CloudCallback
+import com.wangsc.buddhatv.callback.HttpCallback
+import com.wangsc.buddhatv.model.DataContext
+import com.wangsc.buddhatv.model.DateTime
+import com.wangsc.buddhatv.model.PostArgument
+import com.wangsc.buddhatv.util._OkHttpUtil.getRequest
+import com.wangsc.buddhatv.util._OkHttpUtil.postRequestByJson
 import java.util.*
 import java.util.concurrent.CountDownLatch
 

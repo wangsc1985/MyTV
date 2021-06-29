@@ -1,9 +1,7 @@
-package com.wangsc.mytv.model
+package com.wangsc.buddhatv.model
 
 import android.content.ContentValues
 import android.content.Context
-import com.wangsc.mytv.model.DatabaseHelper
-import com.wangsc.mytv.model.Setting
 import java.util.*
 
 /**

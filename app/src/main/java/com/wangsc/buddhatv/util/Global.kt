@@ -1,4 +1,4 @@
-package com.wangsc.mytv.util
+package com.wangsc.buddhatv.util
 
 import android.text.TextUtils
 import android.util.Log

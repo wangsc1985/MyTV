@@ -1,4 +1,4 @@
-package com.wangsc.mytv.model;
+package com.wangsc.buddhatv.model;
 
 public class PostArgument {
     public String name;

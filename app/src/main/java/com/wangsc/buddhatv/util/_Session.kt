@@ -1,4 +1,4 @@
-package com.wangsc.mytv.util
+package com.wangsc.buddhatv.util
 
 object _Session {
     val ServiceSocketPort=8123

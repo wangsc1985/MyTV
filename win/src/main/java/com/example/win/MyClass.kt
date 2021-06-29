@@ -1,6 +1,8 @@
 package com.example.win
 
 import java.io.DataInputStream
+import java.io.File
+import java.io.FileFilter
 import java.net.ServerSocket
 
 class MyClass {
@@ -9,21 +11,14 @@ class MyClass {
         private  var a = 0
         @JvmStatic
         fun main(args: Array<String>) {
-//            var ss = ServerSocket(8000);
-//            //不止接受一个客户端
-//            while (true) {
-//                var s = ss.accept();//接受一个连接
-//                var dis = DataInputStream(s.getInputStream());//输入管道
-//                System.out.println(dis.readInt());
-//                dis.close();
-//                s.close()
-//            }
 
-            a=1
-            Thread({
-                System.out.println(a)
-            }).start()
-
+            val dir = File("d:\\a")
+            var list = dir.listFiles({ file -> file.extension == "wmv" || file.extension == "mp" })
+//            var list = dir.listFiles()
+            println(list.toList())
+            list.forEach {
+                println(it.name)
+            }
         }
     }
 }

@@ -6,11 +6,11 @@ android {
     compileSdkVersion 30
     buildToolsVersion '29.0.3'
     defaultConfig {
-        applicationId "com.wangsc.mytv"
+        applicationId "com.wangsc.buddhatv"
         minSdkVersion 16
         targetSdkVersion 30
-        versionCode 1
-        versionName "1.0"
+        versionCode 41
+        versionName '2.0'
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
@@ -50,4 +50,5 @@ dependencies {
     implementation 'com.android.support:support-v4:28.0.0'
 //    网络通信库
     implementation 'com.squareup.okhttp3:okhttp:3.12.1'
+    implementation 'com.android.support.constraint:constraint-layout:2.0.1'
 }

@@ -1,4 +1,4 @@
-package com.wangsc.mytv.util;
+package com.wangsc.buddhatv.util;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -7,9 +7,8 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.os.Build;
 import android.support.v4.app.NotificationCompat;
-import android.widget.RemoteViews;
 
-import com.wangsc.mytv.R;
+import com.wangsc.buddhatv.R;
 
 public class _NotificationUtils {
 

@@ -1,3 +1,3 @@
 include ':win'
 include ':app'
-rootProject.name = "MyTV"
+rootProject.name = "BuddhaTV"

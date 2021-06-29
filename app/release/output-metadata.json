@@ -4,15 +4,15 @@
     "type": "APK",
     "kind": "Directory"
   },
-  "applicationId": "com.wangsc.mytv",
+  "applicationId": "com.wangsc.buddhatv",
   "variantName": "release",
   "elements": [
     {
       "type": "SINGLE",
       "filters": [],
       "properties": [],
-      "versionCode": 1,
-      "versionName": "1.0",
+      "versionCode": 41,
+      "versionName": "2.0",
       "enabled": true,
       "outputFile": "app-release.apk"
     }

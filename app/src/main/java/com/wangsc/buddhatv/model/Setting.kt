@@ -1,4 +1,4 @@
-package com.wangsc.mytv.model
+package com.wangsc.buddhatv.model
 
 /**
  * Created by 阿弥陀佛 on 2015/6/30.
@@ -29,7 +29,7 @@ class Setting(var name: String, var string: String, var level: Int) {
 
     enum class KEYS  //endregion
     {
-        media_position, media_path,net_video_num,is_play_local,is_print_other_all,wx_request_code,wx_db_mark_date
+        media_position, media_path
     }
 
 }
