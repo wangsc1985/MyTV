@@ -21,7 +21,6 @@ import com.wangsc.buddhatv.util._Utils.e
 import kotlinx.android.synthetic.main.activity_fullscreen.*
 import java.io.File
 import java.text.Collator
-import java.text.DecimalFormat
 import java.text.RuleBasedCollator
 import java.util.*
 
@@ -34,8 +33,6 @@ class MainActivity : AppCompatActivity() {
     private var mediaPath: String
     private lateinit var fileList: Array<File>
     lateinit var adapter: ListAdapter
-
-    var format = DecimalFormat("##")
 
     private lateinit var dc: DataContext
     private lateinit var fileNames: Array<String?>
@@ -129,7 +126,7 @@ class MainActivity : AppCompatActivity() {
                     e("video view has prepared... ${mediaPosition / 1000}秒")
                     log("视频加载完毕，当前位置： ${mediaPosition / 1000}秒")
 //                    tv_progress.text = format.format(mediaPosition.toDouble() * 100 / videoView.duration)
-                    setProgressText()
+                    setProgress()
                     videoView.seekTo(mediaPosition)
                     if (!videoView.isPlaying) {
                         e("视频不在播放状态，启动播放。")
@@ -225,7 +222,6 @@ class MainActivity : AppCompatActivity() {
                 videoView.setVideoPath(file.absolutePath)
                 tv_title.text = file.name
 //                tv_progress.text = format.format(mediaPosition.toDouble() * 100 / videoView.duration)
-                setProgressText()
                 videoView.requestFocus()
             }
             startTimerTask()
@@ -278,7 +274,7 @@ class MainActivity : AppCompatActivity() {
             mediaPosition = videoView.currentPosition + videoView.duration / 100
             videoView.seekTo(mediaPosition)
 //            tv_progress.text = format.format(mediaPosition.toDouble() * 100 / videoView.duration)
-            setProgressText()
+            setProgress()
             dc.editSetting(Setting.KEYS.media_position, mediaPosition)
         } catch (e: Exception) {
             log(_Utils.getExceptionStr(e))
@@ -291,7 +287,7 @@ class MainActivity : AppCompatActivity() {
             mediaPosition = videoView.currentPosition - videoView.duration / 100
             videoView.seekTo(mediaPosition)
 //            tv_progress.text = format.format(mediaPosition.toDouble() * 100 / videoView.duration)
-            setProgressText()
+            setProgress()
             dc.editSetting(Setting.KEYS.media_position, mediaPosition)
         } catch (e: Exception) {
             log(_Utils.getExceptionStr(e))
@@ -336,7 +332,7 @@ class MainActivity : AppCompatActivity() {
                         runOnUiThread {
                             hideActionBar()
 //                            tv_progress.text = format.format(mediaPosition.toDouble() * 100 / videoView.duration)
-                            setProgressText()
+                            setProgress()
                             tv_time.text = DateTime().toShortTimeString()
                         }
                     } catch (e: Exception) {
@@ -347,10 +343,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun setProgressText(){
+    fun setProgress(){
 //        tv_progress.text = "${durationToTimeString(mediaPosition)}/${durationToTimeString(videoView.duration)}"
-        val duration =videoView.duration-mediaPosition
-        tv_progress.text = "${if(duration>0) durationToTimeString(duration) else ""}"
+//        val duration =videoView.duration-mediaPosition
+//        tv_progress.text = "${if(duration>0) durationToTimeString(duration) else ""}"
+        pb_progress.max = videoView.duration
+        pb_progress.progress = mediaPosition
     }
 
     fun stopTimerTask() {
