@@ -100,26 +100,27 @@ class MainActivity : AppCompatActivity() {
 
             lv_list.visibility = View.GONE
 
-            lv_list.setOnItemClickListener { parent, view, position, id ->
-                if (position != playingFileIndex) {
-                    val file = fileList[position]
-                    var filePath = file.absolutePath
-                    e("$filePath")
-                    videoView.setVideoPath(filePath)
-                    videoView.start()
-                    videoView.requestFocus()
-//                    tv_title.text = file.name
-                    mediaPosition = 0
-                    dc.editSetting(Setting.KEYS.media_path, filePath)
-                    dc.editSetting(Setting.KEYS.media_position, mediaPosition)
-                }
-            }
+//            lv_list.setOnItemClickListener { parent, view, position, id ->
+//                if (position != playingFileIndex) {
+//                    val file = fileList[position]
+//                    var filePath = file.absolutePath
+//                    e("$filePath")
+//                    videoView.setVideoPath(filePath)
+//                    videoView.start()
+//                    videoView.requestFocus()
+////                    tv_title.text = file.name
+//                    mediaPosition = 0
+//                    dc.editSetting(Setting.KEYS.media_path, filePath)
+//                    dc.editSetting(Setting.KEYS.media_position, mediaPosition)
+//                }
+//            }
 
 
             playLocalVideo()
             adapter = ListAdapter()
             lv_list.adapter = adapter
-            tv_log.visibility = View.GONE
+            lv_list.setSelection(selectedFileIndex)
+            hideLog()
 
             videoView.setOnPreparedListener {
                 try {
@@ -302,11 +303,12 @@ class MainActivity : AppCompatActivity() {
             startTimerTask()
 //            tv_title.setTextColor(Color.WHITE)
 //            tv_progress.setTextColor(Color.WHITE)
-            tv_log.visibility = View.GONE
+            hideLog()
         } catch (e: Exception) {
             log(_Utils.getExceptionStr(e))
         }
     }
+
 
     fun mediaPause() {
         log("视频暂停")
@@ -314,7 +316,7 @@ class MainActivity : AppCompatActivity() {
         mediaPosition = videoView.currentPosition
         dc.editSetting(Setting.KEYS.media_position, mediaPosition)
         stopTimerTask()
-        tv_log.visibility = View.VISIBLE
+        showLog()
         e("当前播放位置：${mediaPosition / 1000}秒")
     }
 
@@ -409,13 +411,23 @@ class MainActivity : AppCompatActivity() {
     fun isListShow():Boolean{
         return lv_list.visibility==View.VISIBLE
     }
-    fun listShow(){
+    fun showList(){
         lv_list.visibility=View.VISIBLE
     }
-    fun listHide(){
+    fun hideList(){
         lv_list.visibility=View.GONE
         selectedFileIndex=playingFileIndex
         adapter.notifyDataSetChanged()
+    }
+
+    fun showLog(){
+        tv_log.visibility = View.VISIBLE
+//        imageView.visibility = View.VISIBLE
+    }
+
+    fun hideLog(){
+        tv_log.visibility = View.GONE
+//        imageView.visibility = View.GONE
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -436,7 +448,7 @@ class MainActivity : AppCompatActivity() {
                         dc.editSetting(Setting.KEYS.media_path, filePath)
                         dc.editSetting(Setting.KEYS.media_position, mediaPosition)
                     }
-                    listHide()
+                    hideList()
                 }else{
                     if (videoView.isPlaying) {
                         mediaPause()
@@ -448,12 +460,15 @@ class MainActivity : AppCompatActivity() {
             KeyEvent.KEYCODE_DPAD_DOWN -> {
                 e("下方向键")
                 if(isListShow()){
+
                     selectedFileIndex++
                     if (selectedFileIndex >= fileList.size)
                         selectedFileIndex = 0
+
+                    lv_list.setSelection(selectedFileIndex)
                     adapter.notifyDataSetChanged()
                 }else{
-                    listShow()
+                    showList()
                 }
             }
             KeyEvent.KEYCODE_DPAD_UP -> {
@@ -462,15 +477,17 @@ class MainActivity : AppCompatActivity() {
                     selectedFileIndex--
                     if (selectedFileIndex <= -1)
                         selectedFileIndex = fileList.size - 1
+
+                    lv_list.setSelection(selectedFileIndex)
                     adapter.notifyDataSetChanged()
                 }else{
-                    listShow()
+                    showList()
                 }
             }
             KeyEvent.KEYCODE_DPAD_LEFT -> {
                 e("左方向键")
                 if(isListShow()){
-                    listHide()
+                    hideList()
                 }else{
                     mediaRewind()
                 }
@@ -478,14 +495,14 @@ class MainActivity : AppCompatActivity() {
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
                 e("右方向键")
                 if(isListShow()){
-                    listHide()
+                    hideList()
                 }else{
                     mediaForward()
                 }
             }
             KeyEvent.KEYCODE_BACK -> {
                 if(isListShow()){
-                    listHide()
+                    hideList()
                     return true
                 }
             }
@@ -497,9 +514,9 @@ class MainActivity : AppCompatActivity() {
 
             KeyEvent.KEYCODE_MENU -> {
                 if(isListShow()){
-                    listHide()
+                    hideList()
                 }else{
-                    listShow()
+                    showList()
                 }
             }
         }
