@@ -463,7 +463,7 @@ class MainActivity : AppCompatActivity() {
                 if (view == null) {
                     log("加载 ${buddha.name}")
                     view = View.inflate(this@MainActivity, R.layout.inflate_list_item, null)
-                    viewMap[position]=view
+                    viewMap[position] = view
                 }
                 val name = view!!.findViewById<TextView>(R.id.tv_name)
                 name.text = buddha.name
@@ -501,6 +501,8 @@ class MainActivity : AppCompatActivity() {
         selectedView(viewMap[selectedFileIndex])
         lv_list.setSelection(selectedFileIndex)
 
+        // FIXME: 2021/6/30 列表关闭，setselection方法没有执行？那为什么刚启动，列表没有加载完毕，上下键还起作用的时候没事，一旦上下键不起作用，直接执行list的itemselected事件时就出问题。
+
         lv_list.visibility = View.GONE
     }
 
@@ -520,7 +522,7 @@ class MainActivity : AppCompatActivity() {
                 e("--------------数字键0--------------")
             }
             KeyEvent.KEYCODE_DPAD_CENTER -> {
-                if (isListShow()){
+                if (isListShow()) {
                     log("--------------列表确认键--------------")
                     unPlayView(viewMap[playFileIndex])
                     playFileIndex = selectedFileIndex
@@ -535,7 +537,7 @@ class MainActivity : AppCompatActivity() {
                         dc.editSetting(Setting.KEYS.media_path, filePath)
                         dc.editSetting(Setting.KEYS.media_position, mediaPosition)
                     }
-                }else{
+                } else {
                     log("--------------播放暂停键--------------")
                     if (videoView.isPlaying) {
                         mediaPause()
@@ -590,11 +592,19 @@ class MainActivity : AppCompatActivity() {
             }
             KeyEvent.KEYCODE_BACK -> {
                 if (isListShow()) {
-                    hideList()
+                    if (tv_log.text.toString().length > 10) {
+                        tv_log.text = ""
+                    } else {
+                        hideList()
+                    }
                     return true
                 }
                 if (!videoView.isPlaying) {
-                    mediaStart()
+                    if (tv_log.text.toString().length > 10) {
+                        tv_log.text = ""
+                    } else {
+                        mediaStart()
+                    }
                     return true
                 }
             }
