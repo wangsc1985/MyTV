@@ -6,5 +6,6 @@
     <color name="black">#000000</color>
     <color name="select">#017A6F</color>
     <color name="black_overlay">#66000000</color>
-    <color name="progress_color">#FFEB3B</color>
+    <color name="progress_color">#2ABFFF</color>
+    <color name="progress_background">#000000</color>
 </resources>
