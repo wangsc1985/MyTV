@@ -8,6 +8,7 @@ import okhttp3.*
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
+import java.lang.Exception
 import java.security.KeyManagementException
 import java.security.NoSuchAlgorithmException
 import javax.net.ssl.SSLSocketFactory
@@ -24,9 +25,11 @@ object _OkHttpUtil {
     @JvmField
     var client: OkHttpClient
     init {
-        client = getOkHttpClient()
+//        client = getOkHttpClient()
+        client = OkHttpClient()
     }
 
+    @Throws(Throwable::class)
     fun getOkHttpClient(): OkHttpClient {
         val builder = OkHttpClient.Builder()
         try {
@@ -108,6 +111,7 @@ object _OkHttpUtil {
     }
 
     @JvmStatic
+    @Throws(Throwable::class)
     fun getRequest(url: String?, callback: HttpCallback) {
         //创建okHttpClient对象
         val mOkHttpClient = client
@@ -124,7 +128,6 @@ object _OkHttpUtil {
                 callback.excute("xxxxxxxxxxx  ${e.message}")
             }
 
-            @Throws(IOException::class)
             override fun onResponse(call: Call, response: Response) {
                 if (response.isSuccessful) {
                     //回调的方法执行在子线程。

@@ -23,6 +23,7 @@ import com.wangsc.buddhatv.util._Utils
 import com.wangsc.buddhatv.util._Utils.e
 import kotlinx.android.synthetic.main.activity_fullscreen.*
 import java.io.File
+import java.io.FileFilter
 import java.text.Collator
 import java.text.RuleBasedCollator
 import java.util.*
@@ -38,7 +39,7 @@ class MainActivity : AppCompatActivity() {
     var selectedView: View?
     var playView: View?
     private var mediaPath: String
-    private lateinit var fileList: Array<File>
+    private var fileList: MutableList<File> = ArrayList()
     lateinit var adapter: ListAdapter
 
     private lateinit var dc: DataContext
@@ -86,25 +87,35 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun loadTitle() {
-        Thread {
-            try {
+        try {
+            Thread {
                 _OkHttpUtil.getRequest(resources.getString(R.string.version_url), HttpCallback { html ->
                     var html = html.replace("\r", "").replace("\n", "")
-                    var matcher = Pattern.compile("(?<=<p>佛陀讲堂【).*(?=】</p>)").matcher(html)
+                    var matcher = Pattern.compile("(?<=佛陀讲堂【).{1,100}(?=】)").matcher(html)
                     matcher.find()
                     var title = matcher.group().trim()
                     dc.editSetting(Setting.KEYS.media_title, title)
                 })
-            } catch (e: Exception) {
-            }
-        }.start()
+            }.start()
+        } catch (e: Throwable) {
+            dc.editSetting(Setting.KEYS.media_title, e.message ?: "空信息")
+        }
     }
 
     fun log(log: String) {
         runOnUiThread {
             e(log)
-            tv_log.text = "${DateTime().toTimeString()} $log \n${tv_log.text}"
+//            tv_log.text = "${DateTime().toTimeString()} $log \n${tv_log.text}"
         }
+    }
+
+    fun showLog() {
+        tv_log.setText(dc.getSetting(Setting.KEYS.media_title, "一门深入 长时薰修").string)
+        tv_log.visibility = View.VISIBLE
+    }
+
+    fun hideLog() {
+        tv_log.visibility = View.GONE
     }
 
     fun selectedView(view: View?) {
@@ -216,6 +227,7 @@ class MainActivity : AppCompatActivity() {
                 override fun onError(mp: MediaPlayer?, what: Int, extra: Int): Boolean {
                     e("不能播放当前视频，播放下一个视频。错误信息：what: $what  extra: $extra")
                     log("不能播放当前视频，播放下一个视频。错误信息：what: $what  extra: $extra")
+                    mediaPause()
                     return true
                 }
             })
@@ -252,6 +264,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun loadAllFiles( list:MutableList<File>,dirPath:String, filter: FileFilter){
+        val dir = File(dirPath)
+        val files = dir.listFiles()
+        files.forEach { file->
+            if(file.isDirectory){
+                loadAllFiles(list,file.absolutePath,filter)
+            }else{
+                list.add(file)
+            }
+        }
+    }
+
     fun playLocalVideo() {
         try {
             mediaPosition = dc.getSetting(Setting.KEYS.media_position, 0).int
@@ -267,16 +291,16 @@ class MainActivity : AppCompatActivity() {
                 .replace("9", "1")
             log("U盘路径：$path")
             log("播放路径：${mediaPath} , 位置：${mediaPosition / 1000}秒")
-            val dir = File(path)
-            val list = dir.listFiles({ file -> file.extension == "mp4" }).toList()
-            Collections.sort(list, SortByName())
-            fileList = list.toTypedArray()
+            fileList.clear()
+            loadAllFiles(fileList,path, FileFilter { file -> file.extension == "mp4" })
+            Collections.sort(fileList, SortByName())
 
+            val mediaName = File(mediaPath).name
             fileNames = arrayOfNulls(fileList.size)
-            for (i in fileList.indices) {
-                fileNames[i] = fileList[i].name
-                if (fileList[i].absolutePath == mediaPath) {
-                    playFileIndex = i
+            for (iii in fileList.indices) {
+                fileNames[iii] = fileList[iii].name
+                if (fileList[iii].name == mediaName) {
+                    playFileIndex = iii
                     selectedFileIndex = playFileIndex
                 }
             }
@@ -356,7 +380,6 @@ class MainActivity : AppCompatActivity() {
         try {
             mediaPosition = videoView.currentPosition + videoView.duration / 100
             videoView.seekTo(mediaPosition)
-//            tv_progress.text = format.format(mediaPosition.toDouble() * 100 / videoView.duration)
             setProgress()
             dc.editSetting(Setting.KEYS.media_position, mediaPosition)
         } catch (e: Exception) {
@@ -419,9 +442,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun setProgress() {
-//        tv_progress.text = "${durationToTimeString(mediaPosition)}/${durationToTimeString(videoView.duration)}"
-//        val duration =videoView.duration-mediaPosition
-//        tv_progress.text = "${if(duration>0) durationToTimeString(duration) else ""}"
         pb_progress.max = videoView.duration
         pb_progress.progress = mediaPosition
     }
@@ -506,14 +526,6 @@ class MainActivity : AppCompatActivity() {
         lv_list.visibility = View.GONE
     }
 
-    fun showLog() {
-//        tv_log.text = dc.getSetting(Setting.KEYS.media_title, "一门深入 长时薰修").string
-        tv_log.visibility = View.VISIBLE
-    }
-
-    fun hideLog() {
-        tv_log.visibility = View.GONE
-    }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
 
@@ -592,7 +604,7 @@ class MainActivity : AppCompatActivity() {
             }
             KeyEvent.KEYCODE_BACK -> {
                 if (isListShow()) {
-                    if (tv_log.text.toString().length > 10) {
+                    if (tv_log.text.toString().length > 100) {
                         tv_log.text = ""
                     } else {
                         hideList()
@@ -600,7 +612,7 @@ class MainActivity : AppCompatActivity() {
                     return true
                 }
                 if (!videoView.isPlaying) {
-                    if (tv_log.text.toString().length > 10) {
+                    if (tv_log.text.toString().length > 100) {
                         tv_log.text = ""
                     } else {
                         mediaStart()
