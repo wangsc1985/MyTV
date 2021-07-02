@@ -7,8 +7,56 @@ import java.util.*
 /**
  * Created by 阿弥陀佛 on 2015/11/18.
  */
-class DataContext(private val context: Context) {
+class DataContext(context: Context) {
     private val dbHelper: DatabaseHelper
+
+    init {
+        dbHelper = DatabaseHelper(context)
+    }
+
+    private fun addMediaPosition(mediaPosition: MediaPosition) {
+        //获取数据库对象
+        val db = dbHelper.writableDatabase
+        //使用insert方法向表中插入数据
+        val values = ContentValues()
+        values.put("dirName", mediaPosition.dirName)
+        values.put("filePath", mediaPosition.filePath)
+        values.put("position", mediaPosition.position)
+        //调用方法插入数据
+        db.insert("MediaPosition", "dirName", values)
+        //关闭SQLiteDatabase对象
+        db.close()
+    }
+
+    fun editMediaPosition(dirName: String,filePath:String,position:Int) {
+        //获取数据库对象
+        val db = dbHelper.writableDatabase
+        //使用update方法更新表中的数据
+        val values = ContentValues()
+        values.put("filePath", filePath)
+        values.put("position", position)
+        if (db.update("MediaPosition", values, "dirName=?", arrayOf(dirName)) == 0) {
+            addMediaPosition(MediaPosition(dirName,filePath,position))
+        }
+        db.close()
+    }
+
+    fun getMediaPosition(dirName: String): MediaPosition? {
+        //获取数据库对象
+        val db = dbHelper.readableDatabase
+        //查询获得游标
+        val cursor = db.query("MediaPosition",null, "dirName=?", arrayOf(dirName), null, null, null)
+        //判断游标是否为空
+        while (cursor.moveToNext()) {
+            val result = MediaPosition( dirName.toString(),
+                cursor.getString(1),
+                cursor.getInt(2) )
+            cursor.close()
+            db.close()
+            return result
+        }
+        return null
+    }
 
     //region Setting
     fun getSetting(name: Any): Setting? {
@@ -16,23 +64,12 @@ class DataContext(private val context: Context) {
         //获取数据库对象
         val db = dbHelper.readableDatabase
         //查询获得游标
-        val cursor = db.query(
-            "setting",
-            null,
-            "name=?",
-            arrayOf(name.toString()),
-            null,
-            null,
-            null
-        )
+        val cursor = db.query("setting",null, "name=?", arrayOf(name.toString()), null, null, null)
         //判断游标是否为空
         while (cursor.moveToNext()) {
-            val setting =
-                Setting(
-                    name.toString(),
+            val setting = Setting( name.toString(),
                     cursor.getString(1),
-                    cursor.getInt(2)
-                )
+                    cursor.getInt(2) )
             cursor.close()
             db.close()
             return setting
@@ -150,7 +187,4 @@ class DataContext(private val context: Context) {
         db.close()
     } //endregion
 
-    init {
-        dbHelper = DatabaseHelper(context)
-    }
 }

@@ -3,7 +3,6 @@ package com.wangsc.buddhatv.util
 import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.Application
-import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Context.ACTIVITY_SERVICE
@@ -11,25 +10,39 @@ import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
-import android.database.Cursor
+import android.net.TrafficStats
 import android.os.Environment
 import android.os.PowerManager
 import android.os.PowerManager.WakeLock
-import android.provider.MediaStore
 import android.util.Log
 import com.wangsc.buddhatv.MainActivity
-import com.wangsc.buddhatv.model.DataContext
 import com.wangsc.buddhatv.model.DateTime
-import com.wangsc.buddhatv.model.Material
 import java.io.*
 import java.net.*
-import java.text.SimpleDateFormat
-import java.util.*
 import kotlin.collections.ArrayList
 
 
 object _Utils {
     val ROOT_DIR = File(Environment.getExternalStorageDirectory().toString() + "/0/mytv")
+
+    private var lastTotalRxBytes = 0L;
+    private var lastTimeStamp = 0L;
+
+    fun getNetSpeed():String {
+        var nowTotalRxBytes = getTotalRxBytes();
+        var nowTimeStamp = System.currentTimeMillis();
+        var speed = ((nowTotalRxBytes - lastTotalRxBytes) * 1000 / (nowTimeStamp - lastTimeStamp));//毫秒转换
+        lastTimeStamp = nowTimeStamp;
+        lastTotalRxBytes = nowTotalRxBytes;
+        if(nowTimeStamp- lastTimeStamp>2000){
+            return ""
+        }
+        return "$speed kb/s";
+    }
+
+    private fun getTotalRxBytes():Long {
+        return TrafficStats.getTotalRxBytes() / 1024//转为KB
+    }
 
     //    var mWakeLock: WakeLock? = null
     fun openApp(context: Context, packageName: String) {
@@ -326,59 +339,6 @@ object _Utils {
             }
         }
         return strMountInfo;
-    }
-
-    /**
-     * 获取本地所有的视频
-     *
-     * @return list
-     */
-    fun getAllLocalVideos(context: Context): List<Material> {
-        var totalUploadCount = 0
-        val projection = arrayOf(
-            MediaStore.Video.Media.DATA,
-            MediaStore.Video.Media.DISPLAY_NAME,
-            MediaStore.Video.Media.DURATION,
-            MediaStore.Video.Media.SIZE
-        )
-        val where =
-            "${MediaStore.Images.Media.MIME_TYPE}=? or ${MediaStore.Video.Media.MIME_TYPE}=? or ${MediaStore.Video.Media.MIME_TYPE}=? or ${MediaStore.Video.Media.MIME_TYPE}=? or ${MediaStore.Video.Media.MIME_TYPE}=?"
-        val whereArgs = arrayOf("video/mp4", "video/rmvb", "video/flv", "video/mkv", "video/mpg")
-        val list: MutableList<Material> = ArrayList()
-        val cursor: Cursor = context.getContentResolver().query(
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI, projection, where, whereArgs,
-            MediaStore.Video.Media.DISPLAY_NAME + " ASC "
-        ) ?: return list
-
-        try {
-            while (cursor.moveToNext()) {
-                val size: Long = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE)) // 大小
-                if (size > 5 * 1024 * 1024) { //大于10M的文件
-                    val materialBean = Material()
-                    val path: String = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA)) // 路径
-                    val duration: Long = cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)).toLong() // 时长
-                    materialBean.Title = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DISPLAY_NAME))
-                    materialBean.Logo = path
-                    materialBean.FilePath = path
-                    materialBean.Checked = false
-                    materialBean.FileType = 2
-                    materialBean.FileId = totalUploadCount++
-                    materialBean.UploadedSize = 0
-                    materialBean.TimeStamps = System.currentTimeMillis().toString()
-                    val format = SimpleDateFormat("HH:mm:ss")
-                    format.setTimeZone(TimeZone.getTimeZone("GMT+0"))
-                    val t: String = format.format(duration)
-                    materialBean.Time = "时长：" + t
-                    materialBean.FileSize = size
-                    list.add(materialBean)
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        } finally {
-            cursor.close()
-        }
-        return list
     }
 
     /**

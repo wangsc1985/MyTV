@@ -2,6 +2,7 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel target="1.7">
+      <module name="BuddhaOnlineTV.app" target="11" />
       <module name="BuddhaTV.app" target="11" />
       <module name="MyTV.app" target="11" />
       <module name="win" target="1.7" />

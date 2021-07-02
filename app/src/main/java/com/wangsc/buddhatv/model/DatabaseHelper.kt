@@ -15,7 +15,7 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context,
 ) {
 
     companion object {
-        private const val VERSION = 1
+        private const val VERSION = 2
         private const val DATABASE_NAME = "mp.db"
     }
 
@@ -28,6 +28,12 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context,
                         + "value TEXT,"
                         + "level INT NOT NULL DEFAULT 100)"
             )
+            db.execSQL(
+                "create table if not exists MediaPosition("
+                        + "dirName TEXT PRIMARY KEY,"
+                        + "filePath TEXT,"
+                        + "position INT NOT NULL DEFAULT 0)"
+            )
         } catch (e: SQLException) {
             Log.e("wangsc", e.message?:"")
         }
@@ -37,6 +43,14 @@ class DatabaseHelper(context: Context?) : SQLiteOpenHelper(context,
         // 更改数据库版本的操作
         try {
             when (oldVersion) {
+                1->{
+                    db.execSQL(
+                        "create table if not exists MediaPosition("
+                                + "dirName TEXT PRIMARY KEY,"
+                                + "filePath TEXT,"
+                                + "position INT NOT NULL DEFAULT 0)"
+                    )
+                }
             }
         } catch (e: SQLException) {
             Log.e("wangsc", e.message?:"")
