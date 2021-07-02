@@ -1,9 +1,14 @@
 package com.wangsc.buddhatv
 
 import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.media.MediaPlayer
+import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -34,7 +39,7 @@ import java.util.regex.Pattern
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
-// TODO: 2021/7/2 网络直播先检查网络能否连通。
+// TODO: 2021/7/2 网络直播先检查网络能否连通。并且程序运行中随时监听网络变化广播。
 
 class MainActivity : AppCompatActivity() {
     private var timer = Timer()
@@ -93,6 +98,24 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    inner class NetworkStateReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            var mAction = intent?.getAction()
+            if (mAction.equals(ConnectivityManager.CONNECTIVITY_ACTION)) {
+                var connManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+                var info = connManager.getActiveNetworkInfo();
+                if (info != null && info.isAvailable()) {
+
+                } else {
+
+                }
+            }
+        }
+    }
+
+    var receiver = NetworkStateReceiver()
+
 
     //region 全屏处理
     val mHideHandler = Handler()
@@ -293,6 +316,8 @@ class MainActivity : AppCompatActivity() {
              * 保持屏幕常亮，即使视频暂停播放
              */
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+
             dc = DataContext(this)
             dc?.let { dc ->
                 operateIndex = dc.getSetting(Setting.KEYS.operate_index, 0).int
@@ -414,6 +439,10 @@ class MainActivity : AppCompatActivity() {
                     return true
                 }
             })
+
+            var filter = IntentFilter()
+            filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+            registerReceiver(receiver, filter)
 
         } catch (e: Exception) {
             log(_Utils.getExceptionStr(e))
@@ -613,7 +642,7 @@ class MainActivity : AppCompatActivity() {
             task = object : TimerTask() {
                 override fun run() {
                     try {
-                        if (videoView.isPlaying) {
+                        if (videoView.isPlaying && pb_loading.visibility != View.VISIBLE) {
                             mediaPosition = videoView.currentPosition
                             dc?.editMediaPosition(operateList[operateIndex].name, operateList[operateIndex].fileList[playFileIndex].path, mediaPosition)
                         }
@@ -654,7 +683,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         e("on destory")
+        videoView.pause()
         stopTimer()
+        unregisterReceiver(receiver);
         super.onDestroy()
     }
 
@@ -875,14 +906,14 @@ class MainActivity : AppCompatActivity() {
                 if (!videoView.isPlaying) {
                     val now = System.currentTimeMillis()
                     if (pb_loading.visibility == View.VISIBLE) {
-                        if(now-prvBackTime<1000){
+                        if (now - prvBackTime < 1000) {
                             this.finish()
                         }
-                    }else if (tv_log.visibility == View.VISIBLE) {
+                    } else if (tv_log.visibility == View.VISIBLE) {
                         e("3")
                         mediaStart()
                     }
-                    prvBackTime=now
+                    prvBackTime = now
                     return true
                 }
             }
@@ -903,6 +934,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     var prvBackTime = 0L
+
     @Throws(Exception::class)
     fun durationToTimeString(duration: Int): String {
         val second = duration % 60000 / 1000

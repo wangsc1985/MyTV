@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
+import android.net.ConnectivityManager
 import android.net.TrafficStats
 import android.os.Environment
 import android.os.PowerManager
@@ -38,6 +39,18 @@ object _Utils {
             return ""
         }
         return "$speed kb/s";
+    }
+
+
+    fun isNetworkConnected(context:Context ):Boolean {
+        if (context != null) {
+            var mConnectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            var mNetworkInfo = mConnectivityManager.getActiveNetworkInfo()
+            if (mNetworkInfo != null) {
+                return mNetworkInfo.isAvailable();
+            }
+        }
+        return false;
     }
 
     private fun getTotalRxBytes():Long {
