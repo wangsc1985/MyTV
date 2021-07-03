@@ -2,7 +2,7 @@ package com.wangsc.buddhatv.model
 
 import android.content.ContentValues
 import android.content.Context
-import java.util.*
+import kotlin.collections.ArrayList
 
 /**
  * Created by 阿弥陀佛 on 2015/11/18.
@@ -25,7 +25,6 @@ class DataContext(context: Context) {
         //调用方法插入数据
         db.insert("MediaPosition", "dirName", values)
         //关闭SQLiteDatabase对象
-        db.close()
     }
 
     fun editMediaPosition(dirName: String,filePath:String,position:Int) {
@@ -38,7 +37,6 @@ class DataContext(context: Context) {
         if (db.update("MediaPosition", values, "dirName=?", arrayOf(dirName)) == 0) {
             addMediaPosition(MediaPosition(dirName,filePath,position))
         }
-        db.close()
     }
 
     fun getMediaPosition(dirName: String): MediaPosition? {
@@ -52,10 +50,25 @@ class DataContext(context: Context) {
                 cursor.getString(1),
                 cursor.getInt(2) )
             cursor.close()
-            db.close()
             return result
         }
         return null
+    }
+    fun getMediaPositions(): MutableList<MediaPosition> {
+        var result:MutableList<MediaPosition> = ArrayList()
+        //获取数据库对象
+        val db = dbHelper.readableDatabase
+        //查询获得游标
+        val cursor = db.query("MediaPosition",null, null,null, null, null, null)
+        //判断游标是否为空
+        while (cursor.moveToNext()) {
+            val model = MediaPosition( cursor.getString(0),
+                cursor.getString(1),
+                cursor.getInt(2) )
+            result.add(model)
+        }
+        cursor.close()
+        return result
     }
 
     //region Setting
@@ -71,7 +84,6 @@ class DataContext(context: Context) {
                     cursor.getString(1),
                     cursor.getInt(2) )
             cursor.close()
-            db.close()
             return setting
         }
         return null
@@ -106,7 +118,6 @@ class DataContext(context: Context) {
         if (db.update("setting", values, "name=?", arrayOf(name.toString())) == 0) {
             addSetting(name, value.toString())
         }
-        db.close()
     }
 
     fun editSettingLevel(name: Any, level: Int) {
@@ -116,7 +127,6 @@ class DataContext(context: Context) {
         val values = ContentValues()
         values.put("level", level.toString() + "")
         db.update("setting", values, "name=?", arrayOf(name.toString()))
-        db.close()
     }
 
     fun deleteSetting(name: Any) {
@@ -126,7 +136,6 @@ class DataContext(context: Context) {
         //        String sql = "DELETE FROM setting WHERE userId="+userId.toString()+" AND name="+name;
 //        addLog(new Log(sql,userId),db);
         //关闭SQLiteDatabase对象
-        db.close()
     }
 
     fun deleteSetting(name: String) {
@@ -136,7 +145,6 @@ class DataContext(context: Context) {
         //        String sql = "DELETE FROM setting WHERE userId="+userId.toString()+" AND name="+name;
 //        addLog(new Log(sql,userId),db);
         //关闭SQLiteDatabase对象
-        db.close()
     }
 
     fun addSetting(name: Any, value: Any) {
@@ -149,7 +157,6 @@ class DataContext(context: Context) {
         //调用方法插入数据
         db.insert("setting", "name", values)
         //关闭SQLiteDatabase对象
-        db.close()
     }
 
     //获取数据库对象
@@ -173,7 +180,6 @@ class DataContext(context: Context) {
                 result.add(setting)
             }
             cursor.close()
-            db.close()
             return result
         }
 
@@ -184,7 +190,6 @@ class DataContext(context: Context) {
         //        String sql = "DELETE FROM setting WHERE userId="+userId.toString()+" AND key="+key;
 //        addLog(new Log(sql,userId),db);
         //关闭SQLiteDatabase对象
-        db.close()
     } //endregion
 
 }

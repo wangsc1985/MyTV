@@ -20,6 +20,7 @@ import com.wangsc.buddhatv.MainActivity
 import com.wangsc.buddhatv.model.DateTime
 import java.io.*
 import java.net.*
+import java.util.*
 import kotlin.collections.ArrayList
 
 
@@ -30,17 +31,54 @@ object _Utils {
     private var lastTimeStamp = 0L;
 
     fun getNetSpeed():String {
-        var nowTotalRxBytes = getTotalRxBytes();
+        var cc = TrafficStats.getTotalRxBytes()
+        if(cc==TrafficStats.UNSUPPORTED.toLong()){
+            return ""
+        }
+        var nowTotalRxBytes = cc / 1024
         var nowTimeStamp = System.currentTimeMillis();
-        var speed = ((nowTotalRxBytes - lastTotalRxBytes) * 1000 / (nowTimeStamp - lastTimeStamp));//毫秒转换
-        lastTimeStamp = nowTimeStamp;
-        lastTotalRxBytes = nowTotalRxBytes;
+        var speed = (nowTotalRxBytes - lastTotalRxBytes)*1000 / (nowTimeStamp - lastTimeStamp)
+        lastTimeStamp = nowTimeStamp
+        lastTotalRxBytes = nowTotalRxBytes
         if(nowTimeStamp- lastTimeStamp>2000){
             return ""
         }
         return "$speed kb/s";
     }
 
+    /**
+     * 通过uid查询文件夹中的数据
+     * @param localUid
+     * @return
+     */
+    private fun getTotalBytesManual(uid:Int):Long {
+
+        var dir = File("/proc/uid_stat")
+        if(!dir.exists()){
+            return 0L
+        }
+        var children = dir.list()
+        var stringBuffer = StringBuffer()
+        for (i in children.indices) {
+            stringBuffer.append(children[i]);
+            stringBuffer.append("   ");
+        }
+        if (!children.contains(uid.toString())) {
+            return 0L;
+        }
+        var uidFileDir = File("/proc/uid_stat/"+uid.toString())
+        var uidActualFileReceived = File(uidFileDir, "tcp_rcv")
+        var textReceived = "0"
+        try {
+            var brReceived = BufferedReader(FileReader(uidActualFileReceived));
+            var receivedLine=brReceived.readLine()
+            if (receivedLine != null) {
+                textReceived = receivedLine;
+            }
+        } catch (e:IOException ) {
+        }
+        return textReceived.toLong()
+    }
 
     fun isNetworkConnected(context:Context ):Boolean {
         if (context != null) {
@@ -51,10 +89,6 @@ object _Utils {
             }
         }
         return false;
-    }
-
-    private fun getTotalRxBytes():Long {
-        return TrafficStats.getTotalRxBytes() / 1024//转为KB
     }
 
     //    var mWakeLock: WakeLock? = null

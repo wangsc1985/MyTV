@@ -9,10 +9,10 @@ import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.media.MediaPlayer
 import android.net.ConnectivityManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.support.constraint.ConstraintLayout
 import android.support.v7.app.AppCompatActivity
 import android.view.KeyEvent
 import android.view.View
@@ -40,7 +40,12 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 // TODO: 2021/7/2 网络直播先检查网络能否连通。并且程序运行中随时监听网络变化广播。
-
+// TODO: 2021/7/2 本地播放就不要显示速度了
+/**
+ * 播放U盘视频和网络法师讲经视频，里面包含
+ * 《净土大经解演义600集》《净土大经科注578集》《2012净土大经科注644集》《无量寿经科注学习班229集》《净土大经科注第四回508集》《净土大经科注第五回14集》，
+ * 专辑循环播放，实时保存播放进度，方便佛弟子平时听经学习使用。
+ */
 class MainActivity : AppCompatActivity() {
     private var timer = Timer()
     private var task: TimerTask? = null
@@ -54,6 +59,11 @@ class MainActivity : AppCompatActivity() {
     val format = DecimalFormat("000")
     var viewMap: MutableMap<Int, View> = HashMap()
 
+    val currentFile:MyUri
+    get() {
+        return operateList[operateIndex].fileList[playFileIndex]
+    }
+
     data class MyUri(var path: String, var name: String)
 
     data class Operate(var name: String, var fileList: List<MyUri>)
@@ -62,39 +72,78 @@ class MainActivity : AppCompatActivity() {
         playFileIndex = 0
         selectedFileIndex = 0
         mediaPosition = 0
-
     }
 
     fun createOperateList() {
-        var fileList1: MutableList<MyUri> = ArrayList()
-        val operate1 = Operate("净土大经科注第四回", fileList1)
+        var fileList: MutableList<MyUri>
+        var operate:Operate
+
+        fileList = ArrayList()
+        operate = Operate("净土大经解演义", fileList)
+        for (ii in 1..600) {
+            fileList.add(MyUri("https://js1.amtb.cn/media/himp4/02/02-039/02-039-0${format.format(ii)}.mp4", "${operate.name} 第${ii}集"))//CCTV1高清
+        }
+        operateList.add(operate)
+        fileList = ArrayList()
+        operate = Operate("净土大经科注", fileList)
         for (ii in 1..578) {
-            fileList1.add(MyUri("https://js1.amtb.cn/media/himp4/02/02-037/02-037-0${format.format(ii)}.mp4", "${operate1.name} ${format.format(ii)}"))//CCTV1高清
+            fileList.add(MyUri("https://js1.amtb.cn/media/himp4/02/02-037/02-037-0${format.format(ii)}.mp4", "${operate.name} 第${ii}集"))//CCTV1高清
         }
-        operateList.add(operate1)
+        operateList.add(operate)
+        fileList = ArrayList()
+        operate = Operate("2012净土大经科注", fileList)
+        for (ii in 1..644) {
+            fileList.add(MyUri("https://js1.amtb.cn/media/himp4/02/02-040/02-040-0${format.format(ii)}.mp4", "${operate.name} 第${ii}集"))//CCTV1高清
+        }
+        operateList.add(operate)
 
-        val fileList2: MutableList<MyUri> = ArrayList()
-        val operate2 = Operate("净土大经科注第五回", fileList2)
+        fileList = ArrayList()
+        operate = Operate("无量寿经科注学习班", fileList)
+        for (ii in 1..229) {
+            fileList.add(MyUri("https://js1.amtb.cn/media/himp4/02/02-042/02-042-0${format.format(ii)}.mp4", "${operate.name} 第${ii}集"))//CCTV1高清
+        }
+        operateList.add(operate)
+
+        fileList = ArrayList()
+        operate = Operate("净土大经科注第四回", fileList)
+        for (ii in 1..508) {
+            fileList.add(MyUri("https://js1.amtb.cn/media/himp4/02/02-041/02-041-0${format.format(ii)}.mp4", "${operate.name} 第${ii}集"))//CCTV1高清
+        }
+        operateList.add(operate)
+
+        fileList = ArrayList()
+        operate = Operate("净土大经科注第五回", fileList)
         for (ii in 1..14) {
-            fileList2.add(MyUri("https://hk2.amtb.de/redirect/media/himp4/02/02-047/02-047-0${format.format(ii)}.mp4", "${operate2.name} ${format.format(ii)}"))//CCTV1高清
+            fileList.add(MyUri("https://hk2.amtb.de/redirect/media/himp4/02/02-047/02-047-0${format.format(ii)}.mp4", "${operate.name} 第${ii}集"))//CCTV1高清
         }
-        operateList.add(operate2)
+        operateList.add(operate)
 
 
-        val path = _Utils.searchPath().replace("2", "1")
-            .replace("3", "1")
-            .replace("4", "1")
-            .replace("5", "1")
-            .replace("6", "1")
-            .replace("7", "1")
-            .replace("8", "1")
-            .replace("9", "1")
+
+        var path = _Utils.searchPath()
+        for (ii in 2..10) {
+            path = path.replace("$ii", "1")
+        }
+
         if (File(path).exists()) {
-            val fileList3: MutableList<MyUri> = ArrayList()
-            loadAllFiles(fileList3, path, FileFilter { file -> file.extension == "mp4" })
-            Collections.sort(fileList3, SortByName())
-            if (fileList3.size > 0) {
-                operateList.add(Operate("本地", fileList3))
+            val fileList: MutableList<MyUri> = ArrayList()
+            loadAllFiles(fileList, path, FileFilter { file -> file.extension == "mp4" })
+            Collections.sort(fileList, SortByName())
+            if (fileList.size > 0) {
+                operateList.add(Operate(resources.getString(R.string.usb_disk_name), fileList))
+            }
+        }
+
+
+        dc?.let { dc ->
+            val name = dc.getSetting(Setting.KEYS.operate_name, 0).string
+            e("operate name : $name")
+            for(ii in operateList.indices){
+                if(operateList[ii].name==name){
+                    e("${operateList[ii].name}")
+                    operateIndex=ii
+                    selectedOperateIndex=operateIndex
+                }
             }
         }
     }
@@ -190,7 +239,7 @@ class MainActivity : AppCompatActivity() {
             if (ii == selectedOperateIndex) {
                 name.setBackgroundResource(R.color.select)
             } else {
-                name.setBackgroundResource(R.color.black)
+                name.setBackgroundResource(R.color.transfer)
             }
             if (ii == operateIndex) {
                 name.setTextColor(Color.RED)
@@ -205,20 +254,20 @@ class MainActivity : AppCompatActivity() {
 
 
     fun isListShow(): Boolean {
-        return lv_list.visibility == View.VISIBLE
+        return layout_list.visibility == View.VISIBLE
     }
 
     fun showList() {
-        lv_list.visibility = View.VISIBLE
+        layout_list.visibility = View.VISIBLE
         lv_list.itemsCanFocus = true
     }
 
     fun hideList() {
-        unSelectedView(viewMap[selectedFileIndex])
+        unSelectedListItem(viewMap[selectedFileIndex])
         selectedFileIndex = playFileIndex
-        selectedView(viewMap[selectedFileIndex])
+        selectedListItem(viewMap[selectedFileIndex])
         lv_list.setSelection(selectedFileIndex)
-        lv_list.visibility = View.GONE
+        layout_list.visibility = View.GONE
     }
 
     fun isOperateShow(): Boolean {
@@ -271,35 +320,35 @@ class MainActivity : AppCompatActivity() {
     }
     //endregion
 
-    fun selectedView(view: View?) {
+    fun selectedListItem(view: View?) {
         view?.let {
-            val name = view.findViewById<TextView>(R.id.tv_name)
-            name.setBackgroundResource(R.color.select)
-//            log("选择 ${name.text}")
+            val root = view.findViewById<ConstraintLayout>(R.id.layout_root)
+            root.setBackgroundResource(R.color.select)
+//            log("选择 ${root.text}")
         }
     }
 
-    fun unSelectedView(view: View?) {
+    fun unSelectedListItem(view: View?) {
         view?.let {
-            val name = view.findViewById<TextView>(R.id.tv_name)
-            name.setBackgroundResource(R.color.black)
-//            log("XXX 选择 ${name.text}")
+            val root = view.findViewById<ConstraintLayout>(R.id.layout_root)
+            root.setBackgroundResource(R.color.transfer)
+//            log("XXX 选择 ${root.text}")
         }
     }
 
-    fun playView(view: View?) {
+    fun playListItem(view: View?) {
         view?.let {
             val name = view.findViewById<TextView>(R.id.tv_name)
             name.setTextColor(Color.RED)
-//            log("${name.text} 播放")
+//            log("${root.text} 播放")
         }
     }
 
-    fun unPlayView(view: View?) {
+    fun unPlayListItem(view: View?) {
         view?.let {
             val name = view.findViewById<TextView>(R.id.tv_name)
             name.setTextColor(Color.WHITE)
-//            log("${name.text} 播放 XXX ")
+//            log("${root.text} 播放 XXX ")
         }
     }
 
@@ -319,9 +368,6 @@ class MainActivity : AppCompatActivity() {
 
 
             dc = DataContext(this)
-            dc?.let { dc ->
-                operateIndex = dc.getSetting(Setting.KEYS.operate_index, 0).int
-            }
 
             loadTitle()
             createOperateList()
@@ -343,9 +389,9 @@ class MainActivity : AppCompatActivity() {
             lv_list.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
 //                    log("iiiiiiiiiiiiiiiiiiiii列表项选中iiiiiiiiiiiiiiiiiiiii")
-                    unSelectedView(viewMap[selectedFileIndex])
+                    unSelectedListItem(viewMap[selectedFileIndex])
                     selectedFileIndex = position
-                    selectedView(viewMap[selectedFileIndex])
+                    selectedListItem(viewMap[selectedFileIndex])
                 }
 
                 override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -357,9 +403,9 @@ class MainActivity : AppCompatActivity() {
             lv_list.setOnItemClickListener { parent, view, position, id ->
 //                log("iiiiiiiiiiiiiiiiiiiii【列表选项确认】iiiiiiiiiiiiiiiiiiiii")
                 dc?.let { dc ->
-                    unPlayView(viewMap[playFileIndex])
+                    unPlayListItem(viewMap[playFileIndex])
                     playFileIndex = selectedFileIndex
-                    playView(viewMap[playFileIndex])
+                    playListItem(viewMap[playFileIndex])
 
 
                     var filePathDB = ""
@@ -368,13 +414,13 @@ class MainActivity : AppCompatActivity() {
                         filePathDB = mp.filePath
                     }
 
-                    val filePath = operateList[operateIndex].fileList[playFileIndex].path
+                    val filePath = currentFile.path
                     if (filePath != filePathDB) {
                         showLoading()
                         videoView.setVideoPath(filePath)
-                        tv_title.text = operateList[operateIndex].fileList[playFileIndex].name
+                        tv_title.text = currentFile.name
                         mediaPosition = 0
-                        dc.editMediaPosition(operateList[operateIndex].name, operateList[operateIndex].fileList[playFileIndex].path, mediaPosition)
+                        dc.editMediaPosition(operateList[operateIndex].name, currentFile.path, mediaPosition)
                     }
                     hideList()
                 }
@@ -384,6 +430,7 @@ class MainActivity : AppCompatActivity() {
             adapter = ListAdapter()
             lv_list.adapter = adapter
             lv_list.setSelection(selectedFileIndex)
+
             hideLog()
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
@@ -428,25 +475,42 @@ class MainActivity : AppCompatActivity() {
 
             videoView.setOnErrorListener(object : MediaPlayer.OnErrorListener {
                 override fun onError(mp: MediaPlayer?, what: Int, extra: Int): Boolean {
-                    log("不能播放当前视频，播放下一个视频。错误信息：what: $what  extra: $extra")
+                    log("不能播放当前视频。错误信息：what: $what  extra: $extra")
                     errorCount++
                     showLoading()
-                    if (operateList[operateIndex].name == resources.getString(R.string.local_operate)) {
+                    if (operateList[operateIndex].name == resources.getString(R.string.usb_disk_name)) {
                         this@MainActivity.finish()
                     } else {
-                        videoView.setVideoPath(operateList[operateIndex].fileList[playFileIndex].path)
+                        videoView.setVideoPath(currentFile.path)
                     }
                     return true
                 }
             })
 
-            var filter = IntentFilter()
-            filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-            registerReceiver(receiver, filter)
-
+            registerBroadcast()
         } catch (e: Exception) {
             log(_Utils.getExceptionStr(e))
         }
+    }
+
+    private fun registerBroadcast() {
+        var filter = IntentFilter()
+        /**
+         * 网络状态
+         */
+        filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+        /**
+         * U盘插入和拔出
+         */
+        filter.addAction(Intent.ACTION_MEDIA_MOUNTED)//插入
+        filter.addAction(Intent.ACTION_MEDIA_UNMOUNTED)//拔出
+        filter.addAction(Intent.ACTION_MEDIA_REMOVED)  //完全拔出
+        filter.addDataScheme("file")//没有这行监听不起作用
+        registerReceiver(receiver, filter)
+    }
+
+    private fun unregisterBroadcast() {
+        unregisterReceiver(receiver);
     }
 
     var errorCount = 0
@@ -503,6 +567,13 @@ class MainActivity : AppCompatActivity() {
             selectedFileIndex = playFileIndex
 
             dc?.let { dc ->
+
+                e("---------------------------------------------------")
+                dc.getMediaPositions().forEach {
+                    e("${it.dirName}  ${it.filePath}  ${it.position}")
+                }
+                e("---------------------------------------------------")
+
                 val mediaPosition = dc.getMediaPosition(operateList[operateIndex].name)
 
                 if (mediaPosition != null) {
@@ -531,9 +602,9 @@ class MainActivity : AppCompatActivity() {
 
             showLoading()
             runOnUiThread {
-                e("地址：${operateList[operateIndex].fileList[playFileIndex].path}")
-                videoView.setVideoPath(operateList[operateIndex].fileList[playFileIndex].path)
-                tv_title.text = operateList[operateIndex].fileList[playFileIndex].name
+                e("地址：${currentFile.path}")
+                videoView.setVideoPath(currentFile.path)
+                tv_title.text = currentFile.name
                 videoView.requestFocus()
             }
             startTimerTask()
@@ -545,21 +616,21 @@ class MainActivity : AppCompatActivity() {
     fun mediaNext() {
         try {
             log("下一个视频")
-            unPlayView(viewMap[playFileIndex])
-            unSelectedView(viewMap[selectedFileIndex])
+            unPlayListItem(viewMap[playFileIndex])
+            unSelectedListItem(viewMap[selectedFileIndex])
 
             playFileIndex++
             selectedFileIndex = playFileIndex
             if (playFileIndex >= operateList[operateIndex].fileList.size)
                 playFileIndex = 0
 
-            unPlayView(viewMap[playFileIndex])
-            unSelectedView(viewMap[selectedFileIndex])
+            unPlayListItem(viewMap[playFileIndex])
+            unSelectedListItem(viewMap[selectedFileIndex])
 
-            val filePath = operateList[operateIndex].fileList[playFileIndex].path
+            val filePath = currentFile.path
             showLoading()
             videoView.setVideoPath(filePath)
-            tv_title.text = operateList[operateIndex].fileList[playFileIndex].name
+            tv_title.text = currentFile.name
             mediaPosition = 0
             dc?.editMediaPosition(operateList[operateIndex].name, filePath, mediaPosition)
         } catch (e: Exception) {
@@ -571,21 +642,21 @@ class MainActivity : AppCompatActivity() {
         try {
             log("上一个视频")
 
-            unPlayView(viewMap[playFileIndex])
-            unSelectedView(viewMap[selectedFileIndex])
+            unPlayListItem(viewMap[playFileIndex])
+            unSelectedListItem(viewMap[selectedFileIndex])
 
             playFileIndex--
             selectedFileIndex = playFileIndex
             if (playFileIndex <= -1)
                 playFileIndex = operateList[operateIndex].fileList.size - 1
 
-            unPlayView(viewMap[playFileIndex])
-            unSelectedView(viewMap[selectedFileIndex])
+            unPlayListItem(viewMap[playFileIndex])
+            unSelectedListItem(viewMap[selectedFileIndex])
 
-            val filePath = operateList[operateIndex].fileList[playFileIndex].path
+            val filePath = currentFile.path
             showLoading()
             videoView.setVideoPath(filePath)
-            tv_title.text = operateList[operateIndex].fileList[playFileIndex].name
+            tv_title.text = currentFile.name
             mediaPosition = 0
             dc?.editMediaPosition(operateList[operateIndex].name, filePath, mediaPosition)
         } catch (e: Exception) {
@@ -598,7 +669,7 @@ class MainActivity : AppCompatActivity() {
             mediaPosition = videoView.currentPosition + videoView.duration / 100
             videoView.seekTo(mediaPosition)
             setProgress()
-            dc?.editMediaPosition(operateList[operateIndex].name, operateList[operateIndex].fileList[playFileIndex].path, mediaPosition)
+            dc?.editMediaPosition(operateList[operateIndex].name, currentFile.path, mediaPosition)
             showLoading()
         } catch (e: Exception) {
             log(_Utils.getExceptionStr(e))
@@ -610,7 +681,7 @@ class MainActivity : AppCompatActivity() {
             mediaPosition = videoView.currentPosition - videoView.duration / 100
             videoView.seekTo(mediaPosition)
             setProgress()
-            dc?.editMediaPosition(operateList[operateIndex].name, operateList[operateIndex].fileList[playFileIndex].path, mediaPosition)
+            dc?.editMediaPosition(operateList[operateIndex].name, currentFile.path, mediaPosition)
             showLoading()
         } catch (e: Exception) {
             log(_Utils.getExceptionStr(e))
@@ -632,7 +703,7 @@ class MainActivity : AppCompatActivity() {
     fun mediaPause() {
         videoView.pause()
         mediaPosition = videoView.currentPosition
-        dc?.editMediaPosition(operateList[operateIndex].name, operateList[operateIndex].fileList[playFileIndex].path, mediaPosition)
+        dc?.editMediaPosition(operateList[operateIndex].name, currentFile.path, mediaPosition)
         stopTimerTask()
         showLog()
     }
@@ -644,7 +715,7 @@ class MainActivity : AppCompatActivity() {
                     try {
                         if (videoView.isPlaying && pb_loading.visibility != View.VISIBLE) {
                             mediaPosition = videoView.currentPosition
-                            dc?.editMediaPosition(operateList[operateIndex].name, operateList[operateIndex].fileList[playFileIndex].path, mediaPosition)
+                            dc?.editMediaPosition(operateList[operateIndex].name, currentFile.path, mediaPosition)
                         }
 
                         runOnUiThread {
@@ -654,7 +725,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         if (tv_loading.visibility == View.VISIBLE) {
                             runOnUiThread {
-                                tv_loading.text = _Utils.getNetSpeed()
+                                tv_loading.text = "${currentFile.name}\n${if(currentFile.name==resources.getString(R.string.usb_disk_name)) "" else _Utils.getNetSpeed()}"
                             }
                         }
                     } catch (e: Exception) {
@@ -685,9 +756,10 @@ class MainActivity : AppCompatActivity() {
         e("on destory")
         videoView.pause()
         stopTimer()
-        unregisterReceiver(receiver);
+        unregisterBroadcast()
         super.onDestroy()
     }
+
 
     inner class ListAdapter : BaseAdapter() {
         override fun getCount(): Int {
@@ -712,6 +784,7 @@ class MainActivity : AppCompatActivity() {
                     viewMap[position] = view
                 }
                 val name = view!!.findViewById<TextView>(R.id.tv_name)
+                val root = view!!.findViewById<ConstraintLayout>(R.id.layout_root)
                 name.text = buddha.name
                 if (position == playFileIndex) {
                     name.setTextColor(Color.RED)
@@ -719,9 +792,9 @@ class MainActivity : AppCompatActivity() {
                     name.setTextColor(Color.WHITE)
                 }
                 if (position == selectedFileIndex) {
-                    name.setBackgroundResource(R.color.select)
+                    root.setBackgroundResource(R.color.select)
                 } else {
-                    name.setBackgroundResource(R.color.black)
+                    root.setBackgroundResource(R.color.transfer)
                 }
             } catch (e: Exception) {
                 log(_Utils.getExceptionStr(e))
@@ -730,7 +803,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun notifyDataSetChanged() {
-            viewMap.clear()
+//            viewMap.clear()
             super.notifyDataSetChanged()
         }
     }
@@ -746,7 +819,7 @@ class MainActivity : AppCompatActivity() {
                 if (isOperateShow()) {
                     e("选中操作")
                     operateIndex = selectedOperateIndex
-                    dc?.editSetting(Setting.KEYS.operate_index, operateIndex)
+                    dc?.editSetting(Setting.KEYS.operate_name, operateList[operateIndex].name)
                     refreshOperate()
                     adapter.notifyDataSetChanged()
 
@@ -772,12 +845,12 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         dc?.editMediaPosition(operateList[operateIndex].name, operateList[operateIndex].fileList[0].path, 0)
                     }
-                    var filePath = operateList[operateIndex].fileList[playFileIndex].path
+                    var filePath = currentFile.path
                     showLoading()
                     videoView.setVideoPath(filePath)
 
                     lv_list.setSelection(selectedFileIndex)
-                    tv_title.text = operateList[operateIndex].fileList[playFileIndex].name
+                    tv_title.text = currentFile.name
 
                     hideOperate()
                     return true
@@ -785,9 +858,9 @@ class MainActivity : AppCompatActivity() {
                 if (isListShow()) {
                     dc?.let { dc ->
                         log("--------------列表确认键--------------")
-                        unPlayView(viewMap[playFileIndex])
+                        unPlayListItem(viewMap[playFileIndex])
                         playFileIndex = selectedFileIndex
-                        playView(viewMap[playFileIndex])
+                        playListItem(viewMap[playFileIndex])
                         hideList()
 
 
@@ -796,13 +869,13 @@ class MainActivity : AppCompatActivity() {
                         if (mp != null) {
                             filePathDB = mp.filePath
                         }
-                        val filePath = operateList[operateIndex].fileList[playFileIndex].path
+                        val filePath = currentFile.path
                         if (filePath != filePathDB) {
                             showLoading()
                             videoView.setVideoPath(filePath)
-                            tv_title.text = operateList[operateIndex].fileList[playFileIndex].name
+                            tv_title.text = currentFile.name
                             mediaPosition = 0
-                            dc.editMediaPosition(operateList[operateIndex].name, operateList[operateIndex].fileList[playFileIndex].path, mediaPosition)
+                            dc.editMediaPosition(operateList[operateIndex].name, currentFile.path, mediaPosition)
                         }
                     }
                     return true
@@ -819,7 +892,7 @@ class MainActivity : AppCompatActivity() {
             KeyEvent.KEYCODE_DPAD_UP -> {
                 if (isListShow()) {
 //                    log("--------------上一个--------------")
-                    unSelectedView(viewMap[selectedFileIndex])
+                    unSelectedListItem(viewMap[selectedFileIndex])
                     selectedFileIndex--
                     if (selectedFileIndex <= -1)
                         selectedFileIndex = operateList[operateIndex].fileList.size - 1
@@ -841,7 +914,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 if (isListShow()) {
 //                    log("--------------下一个--------------")
-                    unSelectedView(viewMap[selectedFileIndex])
+                    unSelectedListItem(viewMap[selectedFileIndex])
                     selectedFileIndex++
                     if (selectedFileIndex >= operateList[operateIndex].fileList.size)
                         selectedFileIndex = 0

@@ -8,4 +8,6 @@
     <color name="black_overlay">#66000000</color>
     <color name="progress_color">#2ABFFF</color>
     <color name="progress_background">#000000</color>
+    <color name="transfer">#00000000</color>
+
 </resources>
